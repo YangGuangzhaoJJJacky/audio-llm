@@ -1,0 +1,1402 @@
+[
+    {
+        "id": "sft_1",
+        "speech": "wavs/sft_1.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Cross training can benefit runners, swimmers, and weightlifters by reducing the risk of injury, improving overall fitness, breaking monotony, increasing strength, and enhancing performance."
+            }
+        ]
+    },
+    {
+        "id": "sft_2",
+        "speech": "wavs/sft_2.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Mindful walking offers physical benefits like improved posture, increased physical fitness, better balance, tension relief, stress reduction, improved flexibility, enhanced circulation, and assistance with weight management."
+            }
+        ]
+    },
+    {
+        "id": "sft_3",
+        "speech": "wavs/sft_3.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The Earth's surface is covered by oceans at a rate of about seventy-one percent."
+            }
+        ]
+    },
+    {
+        "id": "sft_4",
+        "speech": "wavs/sft_4.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Language translation technology has a significant impact on globalization by breaking down language barriers, facilitating cross-border communication, increasing accessibility, and promoting multilingualism."
+            }
+        ]
+    },
+    {
+        "id": "sft_5",
+        "speech": "wavs/sft_5.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Samsung, Apple, and Huawei are among the most popular smartphone brands worldwide."
+            }
+        ]
+    },
+    {
+        "id": "sft_6",
+        "speech": "wavs/sft_6.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Collaboration and collective creativity play a significant role in the pursuit of originality by bringing together diverse perspectives and skill sets, leading to new and innovative ideas, greater diversity of perspectives, opportunities for feedback and refinement, and ultimately, more original and valuable outcomes."
+            }
+        ]
+    },
+    {
+        "id": "sft_7",
+        "speech": "wavs/sft_7.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Logical fallacies include ad hominem, appeal to authority, false equivalence, slippery slope, and strawman. Recognizing them requires critical thinking and skepticism."
+            }
+        ]
+    },
+    {
+        "id": "sft_8",
+        "speech": "wavs/sft_8.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Factors contributing to the addictiveness of reality TV shows include emotional connection, suspense and drama, escapism, social commentary, identification and comparison, and community engagement."
+            }
+        ]
+    },
+    {
+        "id": "sft_9",
+        "speech": "wavs/sft_9.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Satellite images are useful for tracking natural disasters, monitoring climate change, identifying pollutants, assessing land use and land cover changes, and mapping biodiversity."
+            }
+        ]
+    },
+    {
+        "id": "sft_10",
+        "speech": "wavs/sft_10.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Yes, mindful walking can be used as a form of meditation or spiritual practice, incorporating awareness, attention to each step, and being fully present in the moment. It is utilized in various spiritual traditions to cultivate mindfulness, connect with the present moment, practice gratitude, connect with nature, and reduce stress and anxiety."
+            }
+        ]
+    },
+    {
+        "id": "sft_11",
+        "speech": "wavs/sft_11.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Language translation technology faces challenges in understanding context and colloquialisms, multilingualism, cultural awareness, machine learning 'confusions,' and legal and ethical considerations."
+            }
+        ]
+    },
+    {
+        "id": "sft_12",
+        "speech": "wavs/sft_12.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Reality TV shows do not always portray accurate representations of real-life situations and are often scripted or edited for entertainment purposes."
+            }
+        ]
+    },
+    {
+        "id": "sft_13",
+        "speech": "wavs/sft_13.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "I'm sorry, as an AI language model, I do not have the ability to determine the subject matter or compare this textbook to others. Please provide me with the specific subject matter you are referring to so that I can provide you with a better response."
+            }
+        ]
+    },
+    {
+        "id": "sft_14",
+        "speech": "wavs/sft_14.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Some important features in a smartphone include the operating system, processor, battery life, camera, storage, display, connectivity, security, design, and price."
+            }
+        ]
+    },
+    {
+        "id": "sft_15",
+        "speech": "wavs/sft_15.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Space debris colliding with satellites can cause damage to the satellite, communication disruptions, mission failure, chain reactions, and risks to human safety."
+            }
+        ]
+    },
+    {
+        "id": "sft_16",
+        "speech": "wavs/sft_16.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Cognitive bias refers to systematic errors in judgment that arise from subjective perception of reality, leading to a distortion of logical thinking and decision-making processes."
+            }
+        ]
+    },
+    {
+        "id": "sft_17",
+        "speech": "wavs/sft_17.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Machine translation is generally faster and cheaper than human translation, but human translation is typically more accurate, can handle language nuances and cultural differences, idiomatic expressions, provide personalization, and offer natural and creative translation."
+            }
+        ]
+    },
+    {
+        "id": "sft_18",
+        "speech": "wavs/sft_18.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Reality TV shows have been criticized for exploiting participants, sensationalizing personal issues, creating misleading narratives, and pressuring participants to perform for the cameras."
+            }
+        ]
+    },
+    {
+        "id": "sft_19",
+        "speech": "wavs/sft_19.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Mindful walking can be beneficial in natural settings, during a busy day, for spiritual purposes, physical health, and mental health."
+            }
+        ]
+    },
+    {
+        "id": "sft_20",
+        "speech": "wavs/sft_20.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Focus on monitoring trends, being flexible, diversifying products/services, addressing customer feedback, investing in technology, and partnering with other businesses."
+            }
+        ]
+    },
+    {
+        "id": "sft_21",
+        "speech": "wavs/sft_21.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The oceans are important for climate regulation, biodiversity, food source, oxygen production, water cycle, and economic value."
+            }
+        ]
+    },
+    {
+        "id": "sft_22",
+        "speech": "wavs/sft_22.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Reality TV shows provide a platform for diversity, inspire and motivate viewers, break stereotypes, educate about industries and lifestyles, raise awareness of social issues, and have economic impact."
+            }
+        ]
+    },
+    {
+        "id": "sft_23",
+        "speech": "wavs/sft_23.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Yes, satellite technology can track wildlife populations by monitoring changes in vegetation, water resources, climate patterns, and using GPS collars to track animals."
+            }
+        ]
+    },
+    {
+        "id": "sft_24",
+        "speech": "wavs/sft_24.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "By fostering a culture of innovation and originality, society can develop new products, ideas, and ways of thinking that can solve problems and improve everyone's lives."
+            }
+        ]
+    },
+    {
+        "id": "sft_25",
+        "speech": "wavs/sft_25.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Loving-kindness meditation cultivates love, kindness, and compassion towards oneself and others, and can foster a positive attitude and empathy."
+            }
+        ]
+    },
+    {
+        "id": "sft_26",
+        "speech": "wavs/sft_26.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Language translation technology has evolved significantly with the development of computer technology and artificial intelligence, reaching milestones including rule-based, statistical, hybrid, neural, and contextual machine translation."
+            }
+        ]
+    },
+    {
+        "id": "sft_27",
+        "speech": "wavs/sft_27.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The technology behind smartphones has evolved significantly over the years, leading to improvements in screen size and quality, processing power, battery life, camera quality, connectivity, and security features."
+            }
+        ]
+    },
+    {
+        "id": "sft_28",
+        "speech": "wavs/sft_28.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Common mistakes that startups make include not having a clear vision, underestimating costs, trying to copy a successful business model without evaluating the market, failing to invest in customer acquisition, and overcomplicating the business model."
+            }
+        ]
+    },
+    {
+        "id": "sft_29",
+        "speech": "wavs/sft_29.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Seas are smaller bodies of saltwater partially enclosed by land, while oceans are massive bodies of saltwater covering most of the Earth's surface and not completely enclosed by land. Oceans are larger in size and volume than seas."
+            }
+        ]
+    },
+    {
+        "id": "sft_30",
+        "speech": "wavs/sft_30.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Cultural and social contexts can significantly impact logical reasoning by influencing decision-making processes and critical thinking abilities."
+            }
+        ]
+    },
+    {
+        "id": "sft_31",
+        "speech": "wavs/sft_31.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Satellites are used to measure various components of the Earth's climate system, including temperature, sea level, ice coverage, and precipitation patterns. They help scientists monitor changes in large-scale climate patterns, understand interactions between the atmosphere, oceans, and land surface, and create computer models to simulate future climate scenarios."
+            }
+        ]
+    },
+    {
+        "id": "sft_32",
+        "speech": "wavs/sft_32.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Innovation can differ between large and small companies in terms of resources, flexibility, focus, risk-taking, and collaboration."
+            }
+        ]
+    },
+    {
+        "id": "sft_33",
+        "speech": "wavs/sft_33.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Language translation technology has increased demand for translation services while also impacting the job market for human translators by shifting the industry focus."
+            }
+        ]
+    },
+    {
+        "id": "sft_34",
+        "speech": "wavs/sft_34.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Reality TV shows distort reality, promote negative behavior, lack educational content, objectify women, expose participants to disturbing experiences, impact mental health, and can have negative influence on society."
+            }
+        ]
+    },
+    {
+        "id": "sft_35",
+        "speech": "wavs/sft_35.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The deepest part of the world's oceans, the Challenger Deep in the Mariana Trench, is approximately thirty-six thousand seventy feet deep. Other ocean depths are still unknown due to ongoing exploration and improving technology."
+            }
+        ]
+    },
+    {
+        "id": "sft_36",
+        "speech": "wavs/sft_36.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Smartphones allow users to communicate, browse the internet, access entertainment, increase productivity, utilize navigation, take photos, personalize their experience, shop online, track fitness, and manage banking and finance."
+            }
+        ]
+    },
+    {
+        "id": "sft_37",
+        "speech": "wavs/sft_37.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "I do not have access to the specific textbook, but a textbook can address current trends by including relevant and up-to-date information like citing recent research, discussing emerging technologies, covering current issues, and providing examples of innovative practices."
+            }
+        ]
+    },
+    {
+        "id": "sft_38",
+        "speech": "wavs/sft_38.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Airbnb is a successful non-traditional business model that leverages the sharing economy by providing a platform for homeowners to rent out their unused space to travelers."
+            }
+        ]
+    },
+    {
+        "id": "sft_39",
+        "speech": "wavs/sft_39.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Ethical considerations related to using logic to justify decisions and actions include bias and discrimination, value conflicts, responsibility and accountability, and transparency and communication."
+            }
+        ]
+    },
+    {
+        "id": "sft_40",
+        "speech": "wavs/sft_40.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Companies face several challenges to innovation, including resistance to change, risk aversion, lack of resources, siloed mindset, lack of clear goals, inadequate communication, short-term thinking, regulatory challenges, difficulty in scaling, and lack of acceptance."
+            }
+        ]
+    },
+    {
+        "id": "sft_41",
+        "speech": "wavs/sft_41.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Incorporate AI and machine learning, improve corpus, improve alignment, use neural networks, reduce ambiguity, and improve user interface."
+            }
+        ]
+    },
+    {
+        "id": "sft_42",
+        "speech": "wavs/sft_42.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Ocean acidification is caused by the absorption of carbon dioxide from the atmosphere, leading to increased acidity in the ocean. This can have adverse effects on marine life, including hindering shell and skeleton formation, impacting behavior and physiology, and posing a threat to marine ecosystems and the global food chain."
+            }
+        ]
+    },
+    {
+        "id": "sft_43",
+        "speech": "wavs/sft_43.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Athletic wear materials include polyester, nylon, spandex, cotton, and merino wool. These materials are chosen for their lightweight, breathable, and moisture-wicking properties, as well as their durability and flexibility."
+            }
+        ]
+    },
+    {
+        "id": "sft_44",
+        "speech": "wavs/sft_44.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Yes, anyone can participate in loving-kindness meditation regardless of their beliefs."
+            }
+        ]
+    },
+    {
+        "id": "sft_45",
+        "speech": "wavs/sft_45.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "I don't have personal beliefs, but Reality TV shows may present unrealistic scenarios of relationships, affecting societal perceptions."
+            }
+        ]
+    },
+    {
+        "id": "sft_46",
+        "speech": "wavs/sft_46.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Smartphones have impacted society by revolutionizing communication, enabling social interaction, changing work patterns, influencing entertainment, and raising concerns about privacy and security."
+            }
+        ]
+    },
+    {
+        "id": "sft_47",
+        "speech": "wavs/sft_47.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Yes, a unique business model is necessary for every business to create a competitive advantage and generate value for its customers."
+            }
+        ]
+    },
+    {
+        "id": "sft_48",
+        "speech": "wavs/sft_48.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Thanks for sharing that information."
+            }
+        ]
+    },
+    {
+        "id": "sft_49",
+        "speech": "wavs/sft_49.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Language translation technology must adhere to ethical considerations including accuracy, confidentiality, cultural sensitivity, transparency, intellectual property, human rights, quality assurance, bias, legal compliance, and human interaction."
+            }
+        ]
+    },
+    {
+        "id": "sft_50",
+        "speech": "wavs/sft_50.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Engage in puzzles, play strategy games, learn formal logic, read and write, take courses or workshops, practice critical thinking, seek feedback."
+            }
+        ]
+    },
+    {
+        "id": "sft_51",
+        "speech": "wavs/sft_51.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Yes, athletic wear can be worn for activities other than sports, such as running errands, travel, yoga/pilates, hiking, casual outings, and working from home."
+            }
+        ]
+    },
+    {
+        "id": "sft_52",
+        "speech": "wavs/sft_52.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Thermal expansion, melting ice sheets and glaciers, land ice melting, human activities, and changes in ocean currents contribute to rising sea levels."
+            }
+        ]
+    },
+    {
+        "id": "sft_53",
+        "speech": "wavs/sft_53.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Diversity and inclusion are critically important in encouraging innovation, improving employee engagement, and retention rates."
+            }
+        ]
+    },
+    {
+        "id": "sft_54",
+        "speech": "wavs/sft_54.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Tsunamis can occur in any ocean or sea, as well as in some lakes and rivers. They are most common in the Pacific Ocean due to the large number of earthquakes and volcanic eruptions that occur in the Ring of Fire."
+            }
+        ]
+    },
+    {
+        "id": "sft_55",
+        "speech": "wavs/sft_55.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Some commonly preferred burger toppings include lettuce, tomato, pickles, onions, cheese, bacon, ketchup, mustard, and mayonnaise."
+            }
+        ]
+    },
+    {
+        "id": "sft_56",
+        "speech": "wavs/sft_56.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "I'm sorry, I don't have information about specific textbooks. Can you please provide me with the name of the textbook you are referring to?"
+            }
+        ]
+    },
+    {
+        "id": "sft_57",
+        "speech": "wavs/sft_57.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "These are some popular apps for investing, meditation, language learning, health tracking, navigation, transportation, music identification, fitness tracking, content saving, and dating."
+            }
+        ]
+    },
+    {
+        "id": "sft_58",
+        "speech": "wavs/sft_58.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Understood, I don't have a preference for how my burger is cooked."
+            }
+        ]
+    },
+    {
+        "id": "sft_59",
+        "speech": "wavs/sft_59.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Identify target audience, engage with customers, showcase unique value, leverage referrals, attend industry events, use videos/multimedia, data visualization, offer free trials"
+            }
+        ]
+    },
+    {
+        "id": "sft_60",
+        "speech": "wavs/sft_60.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "When examining athletic wear, consider the material, stitching, fit, and brand reputation. These factors can help differentiate between high-quality athletic wear and low-quality imitations."
+            }
+        ]
+    },
+    {
+        "id": "sft_61",
+        "speech": "wavs/sft_61.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "I cannot form personal thoughts or beliefs. Viewers may find scripted reality TV misleading, but it can also be entertaining depending on personal preferences."
+            }
+        ]
+    },
+    {
+        "id": "sft_62",
+        "speech": "wavs/sft_62.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "To protect your smartphone, install antivirus app, update OS, download apps from reputable sources, avoid suspicious links, use password or PIN, connect to secure Wi-Fi, disable Bluetooth when not in use, and backup data regularly."
+            }
+        ]
+    },
+    {
+        "id": "sft_63",
+        "speech": "wavs/sft_63.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Loving-kindness meditation can improve mental health by reducing stress and anxiety, boosting positive emotions, reducing negative emotions, enhancing empathy and compassion, and improving social connection."
+            }
+        ]
+    },
+    {
+        "id": "sft_64",
+        "speech": "wavs/sft_64.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Innovation involves a combination of skills and attitudes that can be learned and improved over time through educational programs and experiential learning opportunities."
+            }
+        ]
+    },
+    {
+        "id": "sft_65",
+        "speech": "wavs/sft_65.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Coral reefs are crucial for marine life, coastal protection, fishing, tourism, and carbon dioxide absorption, benefiting both ecosystems and human communities."
+            }
+        ]
+    },
+    {
+        "id": "sft_66",
+        "speech": "wavs/sft_66.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Athletic wear recommendations vary by sport, such as running, cycling, yoga, Crossfit, and swimming, and include considerations for impact absorption, aerodynamics, flexibility, and quick-drying properties."
+            }
+        ]
+    },
+    {
+        "id": "sft_67",
+        "speech": "wavs/sft_67.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The preference between fast food burgers and gourmet burgers depends on an individual's taste, lifestyle, and budget."
+            }
+        ]
+    },
+    {
+        "id": "sft_68",
+        "speech": "wavs/sft_68.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Innovation is crucial for developing a successful business model that can adapt to the dynamic market and meet the needs of customers."
+            }
+        ]
+    },
+    {
+        "id": "sft_69",
+        "speech": "wavs/sft_69.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Approximately eighty percent of the world's fish supply comes from oceans."
+            }
+        ]
+    },
+    {
+        "id": "sft_70",
+        "speech": "wavs/sft_70.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The key ethical values include honesty, integrity, respect, fairness, responsibility, compassion, confidentiality, and professionalism."
+            }
+        ]
+    },
+    {
+        "id": "sft_71",
+        "speech": "wavs/sft_71.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Practice loving-kindness towards yourself, be consistent, set an intention, visualize, use phrases, don't judge your thoughts, and practice patience."
+            }
+        ]
+    },
+    {
+        "id": "sft_72",
+        "speech": "wavs/sft_72.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The latest advancements in smartphone technology may include 5G connectivity, foldable displays, improved cameras, AI and machine learning integration, biometric authentication, AR and VR integration, improved battery life, and enhanced voice assistants."
+            }
+        ]
+    },
+    {
+        "id": "sft_73",
+        "speech": "wavs/sft_73.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "People have different preferences for burgers based on their dietary choices and taste preferences, such as beef for its juicy flavor, chicken for lean protein, and veggie for plant-based ingredients."
+            }
+        ]
+    },
+    {
+        "id": "sft_74",
+        "speech": "wavs/sft_74.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Reality TV shows have evolved from competitions to celebrity-focused to social media-influenced, emphasizing shock value and becoming more niche with the rise of streaming services."
+            }
+        ]
+    },
+    {
+        "id": "sft_75",
+        "speech": "wavs/sft_75.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The biggest challenges facing ocean conservation include overfishing, plastic pollution, climate change, habitat destruction, poor management practices, international cooperation, and lack of public awareness."
+            }
+        ]
+    },
+    {
+        "id": "sft_76",
+        "speech": "wavs/sft_76.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The purpose of market research is to gather and analyze data about a specific market, industry, or target audience to understand customer needs, preferences, behaviors, and trends. The insights obtained help businesses make informed decisions about products, services, marketing, pricing, and business plans, and identify opportunities, gauge customer satisfaction, assess competition, and mitigate risks."
+            }
+        ]
+    },
+    {
+        "id": "sft_77",
+        "speech": "wavs/sft_77.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "There are several sustainable and eco-friendly options available for athletic wear, including recycled materials, organic cotton, bamboo, Tencel, and hemp. Some brands offering these options are Patagonia, PrAna, Athleta, Outdoor Voices, and Girlfriend Collective."
+            }
+        ]
+    },
+    {
+        "id": "sft_78",
+        "speech": "wavs/sft_78.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Focus on creating a study schedule, active reading, using flashcards, practice problems, collaborate with classmates, break down assignments, and maintain a healthy balance."
+            }
+        ]
+    },
+    {
+        "id": "sft_79",
+        "speech": "wavs/sft_79.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Loving-kindness meditation, also known as Metta meditation, originates from ancient Buddhist teachings and has been practiced for over two thousand five hundred years."
+            }
+        ]
+    },
+    {
+        "id": "sft_80",
+        "speech": "wavs/sft_80.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The success of an innovation project can be measured by meeting project goals, user adoption and satisfaction, financial impact, time to market, and competitive advantage."
+            }
+        ]
+    },
+    {
+        "id": "sft_81",
+        "speech": "wavs/sft_81.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "I don't have a preference for burger buns, but some people may prefer brioche buns for their buttery flavor and fluffy texture, while others may prefer sesame buns for the nutty flavor and crunchy texture. It ultimately comes down to personal taste."
+            }
+        ]
+    },
+    {
+        "id": "sft_82",
+        "speech": "wavs/sft_82.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Ethics in healthcare are important for patient care, professionalism, trust, confidentiality, legal obligations, and accountability."
+            }
+        ]
+    },
+    {
+        "id": "sft_83",
+        "speech": "wavs/sft_83.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Durability is crucial in athletic wear because it affects performance, safety, and has economic and environmental implications."
+            }
+        ]
+    },
+    {
+        "id": "sft_84",
+        "speech": "wavs/sft_84.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Textbooks vary in their approach to subject matter, providing either a general overview or delving deeply into specific areas. The focus depends on the author's intention, target audience, and scope of coverage. Comprehensive textbooks aim to cover the entire subject matter but may not delve deeply into every aspect."
+            }
+        ]
+    },
+    {
+        "id": "sft_85",
+        "speech": "wavs/sft_85.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Common methods used for market research include surveys, focus groups, interviews, observations, online analytics, and secondary research."
+            }
+        ]
+    },
+    {
+        "id": "sft_86",
+        "speech": "wavs/sft_86.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Consider operating system iOS, Android, others, display size, resolution, color, durability, performance processor, RAM, storage, camera, battery life, connectivity, design, brand reputation and support, price, and extra features."
+            }
+        ]
+    },
+    {
+        "id": "sft_87",
+        "speech": "wavs/sft_87.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Popular TikTok dances include the Renegade, Savage, Say So, Blinding Lights, The Woah, and the Something New dance."
+            }
+        ]
+    },
+    {
+        "id": "sft_88",
+        "speech": "wavs/sft_88.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The highest mountains in the world are Mount Everest, K2, and Kangchenjunga in the Himalayas."
+            }
+        ]
+    },
+    {
+        "id": "sft_89",
+        "speech": "wavs/sft_89.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "It's important for businesses to balance profit goals with ethical and social responsibilities. Prioritizing ethical and social responsibility can lead to positive outcomes such as brand reputation and customer trust."
+            }
+        ]
+    },
+    {
+        "id": "sft_90",
+        "speech": "wavs/sft_90.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "There is no specific time of day that is best for loving-kindness meditation. It depends on individual schedules and preferences."
+            }
+        ]
+    },
+    {
+        "id": "sft_91",
+        "speech": "wavs/sft_91.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Classic side dishes to accompany a burger include fries, onion rings, and coleslaw. Other popular options are sweet potato fries, tater tots, mac and cheese, potato salad, and grilled vegetables."
+            }
+        ]
+    },
+    {
+        "id": "sft_92",
+        "speech": "wavs/sft_92.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "The time it takes to learn a new TikTok dance routine can vary based on factors like previous experience, skill level, routine complexity, and dedication to practicing."
+            }
+        ]
+    },
+    {
+        "id": "sft_93",
+        "speech": "wavs/sft_93.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Government policies and regulations can foster innovation through investment in research and development, intellectual property protection, public-private collaboration, open data policies, and regulatory frameworks."
+            }
+        ]
+    },
+    {
+        "id": "sft_94",
+        "speech": "wavs/sft_94.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Loving-kindness meditation is generally considered safe and beneficial, but may bring up difficult emotions. Seek support if needed."
+            }
+        ]
+    },
+    {
+        "id": "sft_95",
+        "speech": "wavs/sft_95.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Athletic wear can be made more comfortable with features like moisture-wicking fabric, breathable materials, stretchy fabrics, flatlock seams, compression technology, anti-odor properties, and UV protection."
+            }
+        ]
+    },
+    {
+        "id": "sft_96",
+        "speech": "wavs/sft_96.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Cultural differences can indeed affect ethical considerations due to varying norms, values, and beliefs. It's important to be culturally sensitive and respectful while upholding universal ethical principles."
+            }
+        ]
+    },
+    {
+        "id": "sft_97",
+        "speech": "wavs/sft_97.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "People have different preferences when customizing their burgers, with some preferring simple toppings and others enjoying experimenting with various sauces and cheeses."
+            }
+        ]
+    },
+    {
+        "id": "sft_98",
+        "speech": "wavs/sft_98.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Textbooks can have different structures depending on subject matter and author's preferences. Some may follow a linear format, others may be more flexible and navigable with a focus on concepts and themes. Graphic organizers, summaries, and quizzes are also used to enhance comprehension and learning."
+            }
+        ]
+    },
+    {
+        "id": "sft_99",
+        "speech": "wavs/sft_99.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Mountains are formed by tectonic uplift, volcanic activity, erosion and weathering, glaciation, and subduction."
+            }
+        ]
+    },
+    {
+        "id": "sft_100",
+        "speech": "wavs/sft_100.wav",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<speech>\nPlease directly answer the questions in the user's speech."
+            },
+            {
+                "from": "assistant",
+                "value": "Loving-kindness meditation can improve relationships by increasing empathy, compassion, and kindness, as well as reducing negative feelings."
+            }
+        ]
+    }
+]
