@@ -3,22 +3,21 @@ import pyarrow.parquet as pq
 import glob
 import os
 
-# 1. 首先导入所有parquet文件
-parquet_files = sorted(glob.glob("/home/recosele/Development/End2End/dataset/step1parquet_dataset/train/*.parquet"))
+# Let's first print the files we find
+parquet_files = sorted(glob.glob("/home/recosele/Development/End2End/dataset/step1/train/train*.parquet"))
+print("Found parquet files:", parquet_files)
 
-# 2. 将所有parquet文件合并成一个dataset
-# 方法1：使用datasets的load_dataset
-dataset = load_dataset('parquet', 
-                      data_files=parquet_files,
-                      split='train')
-
-# 或者方法2：手动读取并合并
-# datasets = []
-# for file in parquet_files:
-#     table = pq.read_table(file)
-#     dataset = Dataset.from_table(table)
-#     datasets.append(dataset)
-# dataset = concatenate_datasets(datasets)
-
-# 3. 推送到hub
-dataset.push_to_hub("RecoseleInc/E2E")  # private=False 如果想公开
+# If files are found, then proceed with loading
+if parquet_files:
+    dataset = load_dataset('parquet',
+                          data_files=parquet_files,
+                          split='train')
+    print("Dataset loaded successfully")
+    print("Dataset size:", len(dataset))
+    # Push to hub
+    dataset.push_to_hub("RecoseleInc/E2E")
+else:
+    print("No parquet files found in the specified directory")
+    # Print the current working directory and list its contents
+    print("Current directory:", os.getcwd())
+    print("Directory contents:", os.listdir("/home/recosele/Development/End2End/dataset/step1/"))
