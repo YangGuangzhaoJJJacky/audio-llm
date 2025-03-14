@@ -164,9 +164,9 @@ class SpeechLLMModel(L.LightningModule):
         batch_size: int = 8,
         learning_rate: float = 1e-4,
         warmup_steps: int = 1000,
-        speech_encoder_path: str = "openai/whisper-large-v3",
-        llm_path: str = "mistralai/Mistral-7B-Instruct-v0.3",
-        dataset_path: str = "japanese-asr/ja_asr.jsut_basic5000",
+        speech_encoder_path: str = "unknown",
+        llm_path: str = "unknown",
+        dataset_path: str = "unknown",
     ):
         super().__init__()
         self.save_hyperparameters()

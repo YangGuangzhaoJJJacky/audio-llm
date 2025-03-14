@@ -1,4 +1,8 @@
 python projector.py fit \
+    --model.speech_encoder_path "openai/whisper-large-v3" \
+    --model.llm_path "mistralai/Mistral-7B-Instruct-v0.3" \
+    --model.dataset_path "japanese-asr/ja_asr.jsut_basic5000" \
+
     --trainer.accelerator "auto" \
     --trainer.devices "auto" \
     --trainer.precision "bf16-true" \
