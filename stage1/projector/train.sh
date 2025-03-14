@@ -2,7 +2,6 @@ python projector.py fit \
     --model.speech_encoder_path "openai/whisper-large-v3" \
     --model.llm_path "mistralai/Mistral-7B-Instruct-v0.3" \
     --model.dataset_path "japanese-asr/ja_asr.jsut_basic5000" \
-
     --trainer.accelerator "auto" \
     --trainer.devices "auto" \
     --trainer.precision "bf16-true" \
@@ -20,7 +19,7 @@ python projector.py fit \
     --trainer.profiler=SimpleProfiler \
     --model.batch_size=1 \
     --trainer.accumulate_grad_batches 4 \
-    > training_log.txt 2>&1 &
+    | tee train.log
 
 
 
