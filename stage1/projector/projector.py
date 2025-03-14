@@ -1,33 +1,64 @@
-import os
-import torch
-import torch.nn as nn
+from typing import TypedDict, cast
+
 import librosa
 import lightning as L
-from torch.utils.data import DataLoader
+import numpy as np
+import torch
+import torch.nn as nn
+from datasets import load_dataset
+from lightning.pytorch.cli import LightningCLI
+from pydantic import BaseModel, ConfigDict
 from torch.optim.lr_scheduler import LambdaLR
+from torch.utils.data import DataLoader, Dataset, random_split
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    WhisperModel,
+    MistralForCausalLM,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+    PreTrainedTokenizerFast,
     WhisperFeatureExtractor,
-    BitsAndBytesConfig
+    WhisperModel,
 )
-from datasets import load_dataset
-from lightning.pytorch.cli import LightningCLI
+from transformers.modeling_outputs import BaseModelOutput
+
+
+class Batch(TypedDict):
+    audio_features: torch.Tensor
+    audio_masks: torch.Tensor
+    input_ids: torch.Tensor
+    input_masks: torch.Tensor
+    assistant_token_ids: torch.Tensor
+    assistant_token_mask: torch.Tensor
+    output_ids: torch.Tensor
+    output_masks: torch.Tensor
+
+
+class Audio(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    path: str
+    array: np.ndarray
+    sampling_rate: int
+
+
+class Item(BaseModel):
+    audio: Audio
+    transcription: str
+
+
+type LLMTokenizer = PreTrainedTokenizer | PreTrainedTokenizerFast
+
 
 class Projector(nn.Module):
     def __init__(self, speech_hidden, llm_hidden):
         super().__init__()
         self.proj = nn.Sequential(
-            nn.Linear(speech_hidden, 2048),
-            nn.LayerNorm(2048),
-            nn.GELU(),
-            nn.Linear(2048, llm_hidden),
-            nn.LayerNorm(llm_hidden)
+            nn.Linear(speech_hidden, 2048), nn.LayerNorm(2048), nn.GELU(), nn.Linear(2048, llm_hidden), nn.LayerNorm(llm_hidden)
         )
-    
+
     def forward(self, x):
         return self.proj(x)
+
 
 def downsample(features: torch.Tensor, k: int) -> torch.Tensor:
     batch_size, seq_len, hidden_size = features.shape
@@ -39,36 +70,39 @@ def downsample(features: torch.Tensor, k: int) -> torch.Tensor:
     downsampled_features = features.mean(dim=2)
     return downsampled_features
 
-def tokenize_text(text, tokenizer):
-    return tokenizer(
-        text,
-        return_tensors="pt",
-        padding=False,
-        truncation=True,
-        max_length=512,
-        add_special_tokens=True
-    )
 
-def get_token_embedding(token_ids, model):
+def tokenize_text(text: str, tokenizer: LLMTokenizer):
+    return tokenizer(text, return_tensors="pt", padding=False, truncation=True, max_length=512, add_special_tokens=True)
+
+
+def get_token_embedding(token_ids: torch.Tensor, model: PreTrainedModel, /):
     embedding_layer = model.get_input_embeddings()
-    return embedding_layer(token_ids).to(dtype=model.dtype)
+    return cast(torch.Tensor, embedding_layer(token_ids)).to(dtype=model.dtype)
 
-def process_audio(audio_data, target_sr=16000):
-    # Convert to mono if needed
-    if len(audio_data.shape) > 1:
-        audio_data = librosa.to_mono(audio_data.T)
-    
-    # Resample if needed
-    if audio_data.shape[0] != target_sr:
-        audio_data = librosa.resample(audio_data, orig_sr=audio_data.shape[0], target_sr=target_sr)
-    
+
+def process_audio(audio_data: np.ndarray, orig_sr: int, target_sr: int = 16000) -> np.ndarray:
+    match audio_data.shape:
+        case [_]:
+            ...
+        case [_, 2]:  # convert to mono if needed
+            audio_data = librosa.to_mono(audio_data.T)
+        case [2, _]:
+            audio_data = librosa.to_mono(audio_data)
+        case _:
+            raise ValueError(f"Invalid audio data shape: {audio_data.shape}")
+
+    if orig_sr != target_sr:  # Resample if needed
+        return librosa.resample(audio_data, orig_sr=orig_sr, target_sr=target_sr)
     return audio_data
 
-def data_collator(batch, llm_tokenizer, feature_extractor):
+
+def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extractor: WhisperFeatureExtractor) -> Batch:
     # Extract batch components
-    audio_data = [item["audio"]["array"] for item in batch]
-    raw_input_prompts = [item["input_prompt"] for item in batch]
-    output_labels = [item["output_label"] for item in batch]
+    audio_data = [item.audio for item in batch]
+    # raw_input_prompts = [item["input_prompt"] for item in batch]
+    # output_labels = [item["output_label"] for item in batch]
+    raw_input_prompts = ["以下の音声データを日本語で音声認識してください。"] * len(audio_data)
+    output_labels = ["音声認識の結果は以下の通りです。" + item.transcription for item in batch]
 
     # Format input prompts with special tokens
     formatted_prompts = []
@@ -81,12 +115,9 @@ def data_collator(batch, llm_tokenizer, feature_extractor):
         formatted_prompts.append(formatted_prompt)
 
     # Process audio features
-    processed_audio = [process_audio(audio) for audio in audio_data]
+    processed_audio = [process_audio(audio.array, audio.sampling_rate) for audio in audio_data]
     audio_features = feature_extractor(
-        processed_audio,
-        sampling_rate=16000,
-        return_tensors="pt",
-        padding=True
+        processed_audio, sampling_rate=16000, return_tensors="pt", padding="max_length", return_attention_mask=True
     )
 
     # Add assistant token after audio
@@ -98,15 +129,11 @@ def data_collator(batch, llm_tokenizer, feature_extractor):
         return_tensors="pt",
         truncation=True,
         max_length=512,
-        add_special_tokens=False  # 因为我们已经手动添加了特殊token
+        add_special_tokens=False,  # 因为我们已经手动添加了特殊token
     )
 
     # Tokenize assistant token separately (will be used after audio features)
-    assistant_tokens = llm_tokenizer(
-        assistant_token,
-        return_tensors="pt",
-        add_special_tokens=False
-    )
+    assistant_tokens = llm_tokenizer(assistant_token, return_tensors="pt", add_special_tokens=False)
 
     # Tokenize output
     output_texts = [f"{label}{llm_tokenizer.eos_token}" for label in output_labels]
@@ -116,7 +143,7 @@ def data_collator(batch, llm_tokenizer, feature_extractor):
         truncation=True,
         return_tensors="pt",
         max_length=512,
-        add_special_tokens=False  # 因为我们手动添加了EOS
+        add_special_tokens=False,  # 因为我们手动添加了EOS
     )
 
     return {
@@ -127,8 +154,9 @@ def data_collator(batch, llm_tokenizer, feature_extractor):
         "assistant_token_ids": assistant_tokens.input_ids,
         "assistant_token_mask": assistant_tokens.attention_mask,
         "output_ids": output_tokens.input_ids,
-        "output_masks": output_tokens.attention_mask
+        "output_masks": output_tokens.attention_mask,
     }
+
 
 class SpeechLLMModel(L.LightningModule):
     def __init__(
@@ -137,65 +165,76 @@ class SpeechLLMModel(L.LightningModule):
         learning_rate: float = 1e-4,
         warmup_steps: int = 1000,
         speech_encoder_path: str = "openai/whisper-large-v3",
-        llm_path: str = "path/to/your/llm",
-        dataset_path: str = "your/dataset/path",
+        llm_path: str = "mistralai/Mistral-7B-Instruct-v0.3",
+        dataset_path: str = "japanese-asr/ja_asr.jsut_basic5000",
     ):
         super().__init__()
         self.save_hyperparameters()
-        
+
         # Initialize Whisper encoder
         self.speech_encoder = WhisperModel.from_pretrained(speech_encoder_path).encoder
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(speech_encoder_path)
-        
+        assert isinstance(self.feature_extractor, WhisperFeatureExtractor)
         # Initialize LLM
         self.llm_tokenizer = AutoTokenizer.from_pretrained(llm_path)
-        self.llm_tokenizer.padding_side = 'right'
+        self.llm_tokenizer.padding_side = "right"
         self.llm_tokenizer.pad_token = self.llm_tokenizer.eos_token
-        self.llm_model = AutoModelForCausalLM.from_pretrained(
-            llm_path,
-            device_map="auto"
-        )
-        
+        self.llm_model = AutoModelForCausalLM.from_pretrained(llm_path, device_map="auto")
+        assert isinstance(self.llm_model, MistralForCausalLM)
         # Initialize Projector
         self.downsample_factor = 4
-        self.projector = Projector(
-            self.speech_encoder.config.hidden_size,
-            self.llm_model.config.hidden_size
-        )
-        
+        self.projector = Projector(self.speech_encoder.config.hidden_size, self.llm_model.config.hidden_size)
+
         # Freeze models except projector
         for param in self.speech_encoder.parameters():
             param.requires_grad = False
         for param in self.llm_model.parameters():
             param.requires_grad = False
-    
+
     def setup(self, stage=None):
         # Load and split dataset
-        dataset = load_dataset(self.hparams.dataset_path)
-        train_val_split = dataset.train_test_split(test_size=0.1)
-        self.train_dataset = train_val_split["train"]
-        self.val_dataset = train_val_split["test"]
+        # 加载原始数据集
+        raw_dataset = load_dataset(self.hparams.dataset_path, split="test")
+
+        class ItemDataset(Dataset[Item]):
+            def __init__(self, data: list[Item]):
+                self.data = data
+
+            def __len__(self):
+                return len(self.data)
+
+            def __getitem__(self, idx):
+                return self.data[idx]
+
+        # 转换回Dataset格式
+        dataset = ItemDataset([Item.model_validate(item) for item in raw_dataset])
+        train_val_split = random_split(dataset, [0.9, 0.1])
+        self.train_dataset = train_val_split[0]
+        self.val_dataset = train_val_split[1]
 
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,
             batch_size=self.hparams.batch_size,
-            collate_fn=lambda batch: data_collator(batch, self.llm_tokenizer, self.feature_extractor),
-            num_workers=4,
-            shuffle=True
+            collate_fn=self.collate_fn,
+            num_workers=0,
+            shuffle=True,
         )
+
+    def collate_fn(self, batch: list[Item]):
+        return data_collator(batch, self.llm_tokenizer, self.feature_extractor)
 
     def val_dataloader(self):
         return DataLoader(
             self.val_dataset,
             batch_size=self.hparams.batch_size,
-            collate_fn=lambda batch: data_collator(batch, self.llm_tokenizer, self.feature_extractor),
-            num_workers=4
+            collate_fn=self.collate_fn,
+            num_workers=0,
         )
 
-    def forward(self, batch):
+    def forward(self, batch: Batch):
         # Process speech input
-        speech_features = self.speech_encoder(batch["audio_features"])
+        speech_features = cast(BaseModelOutput, self.speech_encoder(batch["audio_features"]))
         speech_embeds = speech_features.last_hidden_state
         speech_embeds = downsample(speech_embeds, self.downsample_factor)
         projected_speech = self.projector(speech_embeds)
@@ -205,84 +244,72 @@ class SpeechLLMModel(L.LightningModule):
 
         # Combine embeddings
         combined_embeds = torch.cat([input_embeds, projected_speech], dim=1)
-        combined_mask = torch.cat([
-            batch["input_masks"],
-            batch["audio_masks"][:, ::self.downsample_factor]
-        ], dim=1)
+        combined_mask = torch.cat([batch["input_masks"], batch["audio_masks"][:, :: self.downsample_factor]], dim=1)
 
         return combined_embeds, combined_mask
 
-    def training_step_with_llm(self, batch, batch_idx):
+    def training_step_with_llm(self, batch: Batch, batch_idx: int):
         # 处理语音输入
-        speech_features = self.speech_encoder(batch["audio_features"])
+        speech_features = cast(BaseModelOutput, self.speech_encoder(batch["audio_features"]))
         speech_embeds = speech_features.last_hidden_state
         downsampled_embeds = downsample(speech_embeds, self.downsample_factor)
         projected_speech = self.projector(downsampled_embeds)
-        
+
         # 获取各部分的嵌入
         input_embeds = get_token_embedding(batch["input_ids"], self.llm_model)
         assistant_embeds = get_token_embedding(batch["assistant_token_ids"], self.llm_model)
-        
+
         # 拼接前缀部分（系统+音频+助理）
         prefix_embeds = torch.cat([input_embeds, projected_speech, assistant_embeds], dim=1)
-        
+
         # 获取目标输出的嵌入
         target_embeds = get_token_embedding(batch["output_ids"], self.llm_model)
         # 输入序列使用除了最后一个token的部分
         input_target_embeds = target_embeds[:, :-1, :]
-        
+
         # 完整的输入嵌入序列
         combined_embeds = torch.cat([prefix_embeds, input_target_embeds], dim=1)
-        
+
         # 注意力掩码
-        audio_mask_downsampled = batch["audio_masks"][:, ::self.downsample_factor]
-        prefix_mask = torch.cat([
-            batch["input_masks"],
-            audio_mask_downsampled,
-            batch["assistant_token_mask"]
-        ], dim=1)
+        audio_mask_downsampled = batch["audio_masks"][:, :: self.downsample_factor]
+        prefix_mask = torch.cat([batch["input_masks"], audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
         target_mask = batch["output_masks"][:, :-1]  # 对应input_target_embeds
         combined_mask = torch.cat([prefix_mask, target_mask], dim=1)
-        
+
         # 构建标签序列
         batch_size = prefix_embeds.size(0)
         prefix_len = prefix_embeds.size(1)
         # 前缀部分的标签都设为-100，只计算目标输出部分的损失
-        labels = torch.full((batch_size, combined_embeds.size(1)), -100, 
-                        dtype=torch.long, device=combined_embeds.device)
+        labels = torch.full((batch_size, combined_embeds.size(1)), -100, dtype=torch.long, device=combined_embeds.device)
         # 将目标序列从第二个token开始的部分作为标签（右移一位）
         labels[:, prefix_len:] = batch["output_ids"][:, 1:]
-        
+
         if batch_idx == 0:  # Debug信息
-            print(f"Shapes:")
+            print("Shapes:")
             print(f"Prefix embeddings: {prefix_embeds.shape}")
             print(f"Target embeddings: {input_target_embeds.shape}")
             print(f"Combined embeddings: {combined_embeds.shape}")
             print(f"Labels shape: {labels.shape}")
             print(f"Prefix length: {prefix_len}")
             print(f"Number of actual target tokens: {(labels != -100).sum().item()}")
-        
+
         # 计算损失
-        outputs = self.llm_model(
-            inputs_embeds=combined_embeds,
-            attention_mask=combined_mask,
-            labels=labels
-        )
-        
+        outputs = self.llm_model(inputs_embeds=combined_embeds, attention_mask=combined_mask, labels=labels)
+
         loss = outputs.loss
         self.log("train_loss", loss)
-        
+
         return loss
-    
-    def training_step(self, batch, batch_idx):
+
+    def training_step(self, batch: Batch, batch_idx: int):
         # 1. 处理语音输入（frozen部分，用 no_grad 计算）
         with torch.no_grad():
-            speech_features = self.speech_encoder(batch["audio_features"])
+            speech_features = cast(BaseModelOutput, self.speech_encoder(batch["audio_features"]))
             speech_embeds = speech_features.last_hidden_state
             downsampled_embeds = downsample(speech_embeds, self.downsample_factor)
         # 2. projector 的计算（需要梯度）
         projected_speech = self.projector(downsampled_embeds)
-        
+
         # 3. 其他部分使用冻结模块的输出，但采用 .detach() 而不是 no_grad 包裹后续运算
         # 这样可以在不计算梯度的同时，仍让后续运算在正常的 autograd 环境下执行，从而保留 projector 输出的梯度流。
         input_embeds = get_token_embedding(batch["input_ids"], self.llm_model).detach()
@@ -295,80 +322,72 @@ class SpeechLLMModel(L.LightningModule):
         combined_embeds = torch.cat([prefix_embeds, input_reply_embeds], dim=1)
 
         # 5. 处理 attention masks（同理，操作应在正常环境下进行）
-        audio_mask_downsampled = batch["audio_masks"][:, ::self.downsample_factor]
+        audio_mask_downsampled = batch["audio_masks"][:, :: self.downsample_factor]
         prefix_mask = torch.cat([batch["input_masks"], audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
         reply_mask = batch["output_masks"][:, :-1]
         combined_mask = torch.cat([prefix_mask, reply_mask], dim=1)
 
         # 6. 设置标签：前缀部分设为 -100，只有回复部分计算 loss
-        batch_size = combined_embeds.size(0)
-        prefix_len = prefix_embeds.size(1)
+        batch_size, _, _ = combined_embeds.size()
+        _, prefix_len, _ = prefix_embeds.size()
         labels = torch.full((batch_size, combined_embeds.size(1)), -100, dtype=torch.long, device=combined_embeds.device)
         labels[:, prefix_len:] = batch["output_ids"][:, 1:]
 
         # 7. 计算 loss（注意：LLM参数已冻结，即使在正常环境下计算也不会更新）
-        outputs = self.llm_model(
-            inputs_embeds=combined_embeds,
-            attention_mask=combined_mask,
-            labels=labels
-        )
-        
+        outputs = self.llm_model(inputs_embeds=combined_embeds, attention_mask=combined_mask, labels=labels)
+
         if batch_idx == 0:
-            print(f"Shapes:")
+            print("Shapes:")
             print(f"prefix_embeds: {prefix_embeds.shape}")
             print(f"input_reply_embeds: {input_reply_embeds.shape}")
             print(f"combined_embeds: {combined_embeds.shape}")
             print(f"labels: {labels.shape}")
             print(f"Number of actual target tokens: {(labels != -100).sum().item()}")
-        
+
         loss = outputs.loss
         self.log("train_loss", loss)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Batch, batch_idx: int):
         # 1. 处理语音输入（validation时也使用no_grad）
         with torch.no_grad():
             speech_features = self.speech_encoder(batch["audio_features"])
             speech_embeds = speech_features.last_hidden_state
             downsampled_embeds = downsample(speech_embeds, self.downsample_factor)
             projected_speech = self.projector(downsampled_embeds)
-            
+
             # 2. 获取嵌入并detach
             input_embeds = get_token_embedding(batch["input_ids"], self.llm_model).detach()
             assistant_embeds = get_token_embedding(batch["assistant_token_ids"], self.llm_model).detach()
             reply_embeds = get_token_embedding(batch["output_ids"], self.llm_model).detach()
             input_reply_embeds = reply_embeds[:, :-1, :]
-            
+
             # 3. 拼接所有输入序列
             prefix_embeds = torch.cat([input_embeds, projected_speech, assistant_embeds], dim=1)
             combined_embeds = torch.cat([prefix_embeds, input_reply_embeds], dim=1)
-            
+
             # 4. 处理attention masks
-            audio_mask_downsampled = batch["audio_masks"][:, ::self.downsample_factor]
+            audio_mask_downsampled = batch["audio_masks"][:, :: self.downsample_factor]
             prefix_mask = torch.cat([batch["input_masks"], audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
             reply_mask = batch["output_masks"][:, :-1]
             combined_mask = torch.cat([prefix_mask, reply_mask], dim=1)
-            
+
             # 5. 设置标签，与training_step保持一致
             batch_size = combined_embeds.size(0)
             prefix_len = prefix_embeds.size(1)
             labels = torch.full((batch_size, combined_embeds.size(1)), -100, dtype=torch.long, device=combined_embeds.device)
             labels[:, prefix_len:] = batch["output_ids"][:, 1:]
-            
+
             # 6. 计算验证损失
-            val_outputs = self.llm_model(
-                inputs_embeds=combined_embeds,
-                attention_mask=combined_mask,
-                labels=labels
-            )
-            
+            val_outputs = self.llm_model(inputs_embeds=combined_embeds, attention_mask=combined_mask, labels=labels)
+
             val_loss = val_outputs.loss
             self.log("val_loss", val_loss, sync_dist=True)
-            
+
             # 7. 生成文本进行评估
             generated_ids = self.llm_model.generate(
                 inputs_embeds=prefix_embeds,  # 注意这里只用prefix部分
-                attention_mask=prefix_mask,    # 相应的mask也只用prefix部分
+                attention_mask=prefix_mask,  # 相应的mask也只用prefix部分
                 max_new_tokens=500,
                 num_beams=4,
                 early_stopping=True,
@@ -377,22 +396,18 @@ class SpeechLLMModel(L.LightningModule):
                 no_repeat_ngram_size=3,
                 temperature=0.7,
                 top_p=0.9,
-                do_sample=True
+                do_sample=True,
             )
-            
+
             # 8. 解码生成的文本和参考文本
             generated_text = self.llm_tokenizer.batch_decode(
-                generated_ids,
-                skip_special_tokens=True,
-                clean_up_tokenization_spaces=True
+                generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True
             )
-            
+
             reference_text = self.llm_tokenizer.batch_decode(
-                batch["output_ids"],
-                skip_special_tokens=True,
-                clean_up_tokenization_spaces=True
+                batch["output_ids"], skip_special_tokens=True, clean_up_tokenization_spaces=True
             )
-            
+
             # 9. 打印调试信息
             if batch_idx == 0:
                 print("\nValidation Shapes:")
@@ -401,38 +416,32 @@ class SpeechLLMModel(L.LightningModule):
                 print(f"combined_embeds: {combined_embeds.shape}")
                 print(f"labels: {labels.shape}")
                 print(f"Number of actual target tokens: {(labels != -100).sum().item()}")
-                
+
                 print("\nValidation Examples:")
                 for i in range(min(2, len(generated_text))):
-                    print(f"\nExample {i+1}:")
+                    print(f"\nExample {i + 1}:")
                     print(f"Generated: {generated_text[i]}")
                     print(f"Reference: {reference_text[i]}")
                     print("-" * 50)
-            
-            return {
-                "val_loss": val_loss,
-                "generated_texts": generated_text,
-                "reference_texts": reference_text
-            }
+
+            return {"val_loss": val_loss, "generated_texts": generated_text, "reference_texts": reference_text}
+
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(
-            self.projector.parameters(),
-            lr=self.hparams.learning_rate
-        )
-        
+        optimizer = torch.optim.AdamW(self.projector.parameters(), lr=self.hparams.learning_rate)
+
         scheduler = {
-            'scheduler': LambdaLR(
-                optimizer,
-                lambda step: min(1.0, step / self.hparams.warmup_steps)
-            ),
-            'interval': 'step',
-            'frequency': 1
+            "scheduler": LambdaLR(optimizer, lambda step: min(1.0, step / self.hparams.warmup_steps)),
+            "interval": "step",
+            "frequency": 1,
         }
-        
+
         return [optimizer], [scheduler]
+
 
 def main():
     cli = LightningCLI(SpeechLLMModel)
 
+
 if __name__ == "__main__":
-    main()
+    x = main()
+    print(x)
