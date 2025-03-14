@@ -3,3 +3,9 @@ dataset/step1/train
 dataset/step1/logs.txt
 stage1/Llama-3-ELYZA-JP-8B
 stage1/LLaMA-Omni/Llama-3.2-1B-Instruct
+.venv/
+.DS_Store
+.vscode/
+.env
+lightning_logs/
+__pycache__/
