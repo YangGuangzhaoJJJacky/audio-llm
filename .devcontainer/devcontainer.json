@@ -1,0 +1,30 @@
+{
+    "name": "项目开发环境",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "charliermarsh.ruff",
+                "mhutchie.git-graph"
+            ]
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    // 挂载目录和卷
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+        // 使用命名卷保存uv缓存
+        "source=uv-cache-volume,target=/root/.cache/uv,type=volume"
+    ],
+    // 自动安装Python并设置开发环境
+    "postCreateCommand": "uv sync",
+    "remoteUser": "root"
+} 
