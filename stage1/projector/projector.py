@@ -1,4 +1,4 @@
-from typing import TypedDict, cast
+from typing import TypedDict, cast, override
 
 import librosa
 import lightning as L
@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from datasets import load_dataset
-from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.cli import LightningArgumentParser, LightningCLI
 from pydantic import BaseModel, ConfigDict
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader, Dataset, random_split
@@ -158,15 +158,71 @@ def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extrac
     }
 
 
+class ItemDataset[T](Dataset[T]):
+    def __init__(self, data: list[T]):
+        self.data = data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx: int) -> T:
+        return self.data[idx]
+
+
+class DataInterface(L.LightningDataModule):
+    def __init__(
+        self,
+        llm_tokenizer: LLMTokenizer,
+        feature_extractor: WhisperFeatureExtractor,
+        dataset_path: str,
+        batch_size: int = 8,
+        num_workers: int = 4,
+    ):
+        super().__init__()
+        self.save_hyperparameters(ignore=["llm_tokenizer", "feature_extractor"])
+        self.llm_tokenizer = llm_tokenizer
+        self.feature_extractor = feature_extractor
+
+    @override
+    def prepare_data(self):
+        load_dataset(self.hparams.dataset_path, split="test")
+
+    @override
+    def setup(self, stage: str):
+        raw_dataset = load_dataset(self.hparams.dataset_path, split="test")
+        dataset = ItemDataset([Item.model_validate(item) for item in raw_dataset])
+        self.train_dataset, self.val_dataset = random_split(dataset, [0.9, 0.1])
+
+    def collate_fn(self, batch: list[Item]):
+        return data_collator(batch, self.llm_tokenizer, self.feature_extractor)
+
+    @override
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.hparams.batch_size,
+            collate_fn=self.collate_fn,
+            num_workers=self.hparams.num_workers,
+            shuffle=True,
+        )
+
+    @override
+    def val_dataloader(self):
+        return DataLoader(
+            self.val_dataset,
+            batch_size=self.hparams.batch_size,
+            collate_fn=self.collate_fn,
+            num_workers=self.hparams.num_workers,
+        )
+
+
 class SpeechLLMModel(L.LightningModule):
     def __init__(
         self,
-        batch_size: int = 8,
+        speech_encoder_path: str,
+        llm_path: str,
         learning_rate: float = 1e-4,
         warmup_steps: int = 1000,
-        speech_encoder_path: str = "unknown",
-        llm_path: str = "unknown",
-        dataset_path: str = "unknown",
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -190,47 +246,6 @@ class SpeechLLMModel(L.LightningModule):
             param.requires_grad = False
         for param in self.llm_model.parameters():
             param.requires_grad = False
-
-    def setup(self, stage=None):
-        # Load and split dataset
-        # 加载原始数据集
-        raw_dataset = load_dataset(self.hparams.dataset_path, split="test")
-
-        class ItemDataset(Dataset[Item]):
-            def __init__(self, data: list[Item]):
-                self.data = data
-
-            def __len__(self):
-                return len(self.data)
-
-            def __getitem__(self, idx):
-                return self.data[idx]
-
-        # 转换回Dataset格式
-        dataset = ItemDataset([Item.model_validate(item) for item in raw_dataset])
-        train_val_split = random_split(dataset, [0.9, 0.1])
-        self.train_dataset = train_val_split[0]
-        self.val_dataset = train_val_split[1]
-
-    def train_dataloader(self):
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.hparams.batch_size,
-            collate_fn=self.collate_fn,
-            num_workers=0,
-            shuffle=True,
-        )
-
-    def collate_fn(self, batch: list[Item]):
-        return data_collator(batch, self.llm_tokenizer, self.feature_extractor)
-
-    def val_dataloader(self):
-        return DataLoader(
-            self.val_dataset,
-            batch_size=self.hparams.batch_size,
-            collate_fn=self.collate_fn,
-            num_workers=0,
-        )
 
     def forward(self, batch: Batch):
         # Process speech input
@@ -438,10 +453,17 @@ class SpeechLLMModel(L.LightningModule):
         return [optimizer], [scheduler]
 
 
+class MyLightningCLI(LightningCLI):
+    def add_arguments_to_parser(self, parser: LightningArgumentParser):
+        parser.link_arguments("model.llm_tokenizer", "data.llm_tokenizer", apply_on="instantiate")
+        parser.link_arguments("model.feature_extractor", "data.feature_extractor", apply_on="instantiate")
+
+
 def main():
-    cli = LightningCLI(SpeechLLMModel)
+    cli = MyLightningCLI(SpeechLLMModel, DataInterface)
 
 
 if __name__ == "__main__":
-    x = main()
-    print(x)
+    print("start")
+    torch.set_float32_matmul_precision("medium")
+    main()
