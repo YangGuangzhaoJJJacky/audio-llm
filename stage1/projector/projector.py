@@ -121,7 +121,7 @@ def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extrac
     )
 
     # Add assistant token after audio
-    assistant_token = "<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
+    assistant_token = ["<|eot_id|><|start_header_id|>assistant<|end_header_id|>"] * len(audio_data)
 
     # Tokenize input prompts
     input_tokens = llm_tokenizer(
