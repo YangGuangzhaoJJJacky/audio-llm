@@ -435,8 +435,8 @@ class SpeechLLMModel(L.LightningModule):
                 print("\nValidation Examples:")
                 for i in range(min(2, len(generated_text))):
                     print(f"\nExample {i + 1}:")
-                    print(f"Generated: {generated_text[i]}")
-                    print(f"Reference: {reference_text[i]}")
+                    print(f"Generated: \033[43m{generated_text[i]}\033[0m")
+                    print(f"Reference: \033[44m{reference_text[i]}\033[0m")
                     print("-" * 50)
 
             return {"val_loss": val_loss, "generated_texts": generated_text, "reference_texts": reference_text}
