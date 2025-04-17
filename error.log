@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/media/disk2/End2End/train/projector.py", line 10, in <module>
-    from pydantic import BaseModel, ConfigDict
-ModuleNotFoundError: No module named 'pydantic'
