@@ -1,6 +1,9 @@
 from typing import TypedDict, cast, override
 
 import librosa
+import os
+from jiwer import cer
+from lightning.pytorch.loggers import TensorBoardLogger
 import lightning as L
 import numpy as np
 import torch
@@ -13,7 +16,7 @@ from torch.utils.data import DataLoader, Dataset, random_split
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    MistralForCausalLM,
+    Qwen2ForCausalLM,
     PreTrainedModel,
     PreTrainedTokenizer,
     PreTrainedTokenizerFast,
@@ -21,6 +24,8 @@ from transformers import (
     WhisperModel,
 )
 from transformers.modeling_outputs import BaseModelOutput
+from huggingface_hub import login
+login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
 
 class Batch(TypedDict):
@@ -102,15 +107,16 @@ def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extrac
     # raw_input_prompts = [item["input_prompt"] for item in batch]
     # output_labels = [item["output_label"] for item in batch]
     raw_input_prompts = ["以下の音声データを日本語で音声認識してください。"] * len(audio_data)
-    output_labels = ["音声認識の結果は以下の通りです。" + item.transcription for item in batch]
+    output_labels = [item.transcription for item in batch]
 
     # Format input prompts with special tokens
     formatted_prompts = []
     for prompt in raw_input_prompts:
         formatted_prompt = (
-            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>"
-            f"{prompt}"
-            f"<|eot_id|><|start_header_id|>user<|end_header_id|>"
+            "<|im_start|>system\n"
+            f"{prompt.strip()}\n"
+            "<|im_end|>\n"
+            "<|im_start|>user\n"
         )
         formatted_prompts.append(formatted_prompt)
 
@@ -121,7 +127,7 @@ def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extrac
     )
 
     # Add assistant token after audio
-    assistant_token = ["<|eot_id|><|start_header_id|>assistant<|end_header_id|>"] * len(audio_data)
+    assistant_token = ["<|im_end|>\n<|im_start|>assistant\n"] * len(audio_data)
 
     # Tokenize input prompts
     input_tokens = llm_tokenizer(
@@ -174,7 +180,6 @@ class DataInterface(L.LightningDataModule):
         self,
         llm_tokenizer: LLMTokenizer,
         feature_extractor: WhisperFeatureExtractor,
-        dataset_path: str,
         batch_size: int = 8,
         num_workers: int = 4,
     ):
@@ -184,14 +189,12 @@ class DataInterface(L.LightningDataModule):
         self.feature_extractor = feature_extractor
 
     @override
-    def prepare_data(self):
-        load_dataset(self.hparams.dataset_path, split="test")
-
-    @override
     def setup(self, stage: str):
-        raw_dataset = load_dataset(self.hparams.dataset_path, split="test")
-        dataset = ItemDataset([Item.model_validate(item) for item in raw_dataset])
-        self.train_dataset, self.val_dataset = random_split(dataset, [0.9, 0.1])
+        raw_train_dataset = load_dataset("japanese-asr/ja_asr.jsut_basic5000", split="test")
+        train_dataset = ItemDataset([Item.model_validate(item) for item in raw_train_dataset])
+        raw_eval_dataset = load_dataset("RecoseleInc/middle_hardness_call_center", split="train").rename_column("transcription_kanji", "transcription")
+        eval_dataset = ItemDataset([Item.model_validate(item) for item in raw_eval_dataset])
+        self.train_dataset, self.val_dataset = train_dataset, eval_dataset
 
     def collate_fn(self, batch: list[Item]):
         return data_collator(batch, self.llm_tokenizer, self.feature_extractor)
@@ -219,8 +222,9 @@ class DataInterface(L.LightningDataModule):
 class SpeechLLMModel(L.LightningModule):
     def __init__(
         self,
-        speech_encoder_path: str,
-        llm_path: str,
+        checkpoint_path: str,
+        speech_encoder_path: str = "openai/whisper-large-v3",
+        llm_path: str = "../pretrained_models/Qwen2.5-0.5B-Instruct",
         learning_rate: float = 1e-4,
         warmup_steps: int = 1000,
     ):
@@ -236,10 +240,18 @@ class SpeechLLMModel(L.LightningModule):
         self.llm_tokenizer.padding_side = "right"
         self.llm_tokenizer.pad_token = self.llm_tokenizer.eos_token
         self.llm_model = AutoModelForCausalLM.from_pretrained(llm_path, device_map="auto")
-        assert isinstance(self.llm_model, MistralForCausalLM)
+        assert isinstance(self.llm_model, Qwen2ForCausalLM)
         # Initialize Projector
         self.downsample_factor = 4
         self.projector = Projector(self.speech_encoder.config.hidden_size, self.llm_model.config.hidden_size)
+        if checkpoint_path:
+            ckpt = torch.load(checkpoint_path, map_location="cpu")
+            self.projector.load_state_dict({k.replace("projector.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("projector.")})
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.speech_encoder.to(device)
+        self.projector.to(device)
+        self.llm_model.to(device)
 
         # Freeze models except projector
         for param in self.speech_encoder.parameters():
@@ -360,7 +372,8 @@ class SpeechLLMModel(L.LightningModule):
             print(f"Number of actual target tokens: {(labels != -100).sum().item()}")
 
         loss = outputs.loss
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, prog_bar=True)
+        self.log("lr", self.trainer.optimizers[0].param_groups[0]["lr"], prog_bar=True)
         return loss
 
     def validation_step(self, batch: Batch, batch_idx: int):
@@ -397,7 +410,7 @@ class SpeechLLMModel(L.LightningModule):
             val_outputs = self.llm_model(inputs_embeds=combined_embeds, attention_mask=combined_mask, labels=labels)
 
             val_loss = val_outputs.loss
-            self.log("val_loss", val_loss, sync_dist=True)
+            self.log("val_loss", val_loss, sync_dist=True, prog_bar=True)
 
             # 7. 生成文本进行评估
             generated_ids = self.llm_model.generate(
@@ -438,19 +451,48 @@ class SpeechLLMModel(L.LightningModule):
                     print(f"Generated: \033[43m{generated_text[i]}\033[0m")
                     print(f"Reference: \033[44m{reference_text[i]}\033[0m")
                     print("-" * 50)
+            # 10. 计算 CER（逐对计算后取平均）
+            cer_scores = [
+                cer(ref, hyp) for ref, hyp in zip(reference_text, generated_text)
+            ]
+            avg_cer = sum(cer_scores) / len(cer_scores)
 
-            return {"val_loss": val_loss, "generated_texts": generated_text, "reference_texts": reference_text}
+            # 11. 记录 CER
+            self.log("val_cer", avg_cer, prog_bar=True, sync_dist=True)
+
+            return {"val_loss": val_loss, "val_cer": avg_cer, "generated_texts": generated_text, "reference_texts": reference_text}
+
+    def on_save_checkpoint(self, checkpoint):
+        state_dict = checkpoint.get('state_dict', {})
+
+        # Exclude keys that start with 'speech_encoder' or 'llm_model'
+        filtered_state_dict = {k: v for k, v in state_dict.items(
+        ) if not k.startswith(('speech_encoder', 'llm_model'))}
+
+        # Update the checkpoint with the filtered state_dict
+        checkpoint['state_dict'] = filtered_state_dict
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.projector.parameters(), lr=self.hparams.learning_rate)
 
+        def lr_lambda(current_step):
+            warmup_steps = self.hparams.warmup_steps
+            total_steps = self.trainer.estimated_stepping_batches or 10000
+            if current_step < warmup_steps:
+                return float(current_step) / float(max(1, warmup_steps))
+            progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+            return 0.5 * (1.0 + np.cos(np.pi * progress))
+
         scheduler = {
-            "scheduler": LambdaLR(optimizer, lambda step: min(1.0, step / self.hparams.warmup_steps)),
+            "scheduler": LambdaLR(optimizer, lr_lambda),
             "interval": "step",
             "frequency": 1,
+            "name": "learning_rate",
         }
 
         return [optimizer], [scheduler]
+
+
 
 
 class MyLightningCLI(LightningCLI):
@@ -460,7 +502,20 @@ class MyLightningCLI(LightningCLI):
 
 
 def main():
-    cli = MyLightningCLI(SpeechLLMModel, DataInterface)
+    cli = MyLightningCLI(
+        SpeechLLMModel,
+        DataInterface,
+        trainer_defaults={
+            "logger": {
+                "class_path": "lightning.pytorch.loggers.TensorBoardLogger",
+                "init_args": {
+                    "save_dir": "tb_logs",
+                    "name": "projector"
+                }
+            }
+        }
+    )
+
 
 
 if __name__ == "__main__":

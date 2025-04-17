@@ -9,3 +9,5 @@ stage1/LLaMA-Omni/Llama-3.2-1B-Instruct
 .env
 lightning_logs/
 __pycache__/
+pretrained_models/*
+tb_logs/*
