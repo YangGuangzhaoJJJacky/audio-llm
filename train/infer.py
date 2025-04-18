@@ -23,13 +23,16 @@ def infer(
     llm_tokenizer.pad_token = llm_tokenizer.eos_token
     llm_model = AutoModelForCausalLM.from_pretrained(llm_path, device_map="auto").eval()
     projector = Projector(speech_encoder.config.hidden_size, llm_model.config.hidden_size).eval()
+    soft_prompt = SoftPrompt(length=20, dim=llm_model.config.hidden_size).eval()
+
     ckpt = torch.load(projector_path, map_location="cpu")
     projector.load_state_dict({k.replace("projector.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("projector.")})
-
+    soft_prompt.load_state_dict({k.replace("soft_prompt.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("soft_prompt.")})
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     speech_encoder.to(device)
     projector.to(device)
     llm_model.to(device)
+    soft_prompt.to(device)
 
     # Load and process audio
     print("Processing audio...")
@@ -52,6 +55,7 @@ def infer(
             "<|im_start|>user\n"
         )
     assistant_token = assistant_token_text
+    soft_prompt_expanded = soft_prompt(batch_size=1)
 
     # Tokenize prompt & assistant
     prompt_tokens = llm_tokenizer(formatted_prompt, return_tensors="pt", add_special_tokens=False).input_ids.to(device)
@@ -62,11 +66,12 @@ def infer(
     assistant_embeds = get_token_embedding(assistant_tokens, llm_model).detach()
 
     # Combine embedding sequence
-    prefix_embeds = torch.cat([prompt_embeds, projected_speech, assistant_embeds], dim=1)
+    prefix_embeds = torch.cat([prompt_embeds, soft_prompt_expanded, projected_speech, assistant_embeds], dim=1)
 
     # Create attention mask
     prefix_mask = torch.cat([
         torch.ones(1, prompt_embeds.size(1), dtype=torch.long, device=device),
+        torch.ones(1, soft_prompt.length, dtype=torch.long, device=device),
         audio_mask[:, ::4],
         torch.ones(1, assistant_embeds.size(1), dtype=torch.long, device=device)
     ], dim=1)
@@ -74,19 +79,20 @@ def infer(
 
     # Generate
     print("Generating...")
-    generated_ids=llm_model.generate(
-        inputs_embeds=prefix_embeds,  
-        attention_mask=prefix_mask,  
+    generated_ids = llm_model.generate(
+        inputs_embeds=prefix_embeds,
+        attention_mask=prefix_mask,
         max_new_tokens=500,
-        num_beams=4,
+        num_beams=1,                     
         early_stopping=True,
         pad_token_id=llm_tokenizer.pad_token_id,
         eos_token_id=llm_tokenizer.eos_token_id,
         no_repeat_ngram_size=3,
         temperature=0.7,
         top_p=0.9,
-        do_sample=True,
+        do_sample=False                
     )
+
 
 
     result = llm_tokenizer.decode(generated_ids[0], skip_special_tokens=False)
@@ -100,10 +106,10 @@ def infer(
 if __name__ == "__main__":
     import sys
 
-    audio_path = sys.argv[1] if len(sys.argv) > 1 else "example.wav"
+    audio_path = sys.argv[1] if len(sys.argv) > 1 else "audio.wav"
     infer(
         audio_path=audio_path,
         speech_encoder_path="openai/whisper-large-v3",
         llm_path="pretrained_models/Qwen2.5-0.5B-Instruct",
-        projector_path="tb_logs/projector/version_0/checkpoints/epoch=0-step=625.ckpt"
+        projector_path="/media/disk2/End2End/tb_logs/projector/version_3/checkpoints/epoch=28-step=18125.ckpt"
     )
