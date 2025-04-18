@@ -25,7 +25,7 @@ from transformers import (
 )
 from transformers.modeling_outputs import BaseModelOutput
 from huggingface_hub import login
-login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
+#login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
 
 class Batch(TypedDict):
@@ -55,25 +55,48 @@ type LLMTokenizer = PreTrainedTokenizer | PreTrainedTokenizerFast
 
 
 class Projector(nn.Module):
-    def __init__(self, speech_hidden, llm_hidden):
+    def __init__(self, speech_encoder_hidden_size, llm_hidden_size):
         super().__init__()
         self.proj = nn.Sequential(
-            nn.Linear(speech_hidden, 2048), nn.LayerNorm(2048), nn.GELU(), nn.Linear(2048, llm_hidden), nn.LayerNorm(llm_hidden)
+            nn.Linear(speech_encoder_hidden_size, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, llm_hidden_size),
         )
 
     def forward(self, x):
         return self.proj(x)
 
+class SoftPrompt(nn.Module):
+    def __init__(self, prompt_len, hidden_size):
+        super().__init__()
+        self.embeddings = nn.Parameter(torch.randn(prompt_len, hidden_size))
+
+    def forward(self, batch_size):
+        return self.embeddings.unsqueeze(0).expand(batch_size, -1, -1)
+
 
 def downsample(features: torch.Tensor, k: int) -> torch.Tensor:
     batch_size, seq_len, hidden_size = features.shape
     if seq_len % k != 0:
-        pad_len = k - (seq_len % k)
-        features = torch.nn.functional.pad(features, (0, 0, 0, pad_len))
-        seq_len = features.shape[1]
+        raise ValueError(
+            "Sequence length must be divisible by the downsample factor")
     features = features.view(batch_size, seq_len // k, k, hidden_size)
-    downsampled_features = features.mean(dim=2)
+    downsampled_features = features.reshape(
+        batch_size, seq_len // k, k * hidden_size)
     return downsampled_features
+
+def downsample_mask(mask: torch.Tensor, k: int) -> torch.Tensor:
+    """
+    Downsample attention mask by k.
+    If any frame in a group of k has value 1, the group is 1.
+    """
+    batch_size, seq_len = mask.shape
+    if seq_len % k != 0:
+        pad_len = k - (seq_len % k)
+        mask = torch.nn.functional.pad(mask, (0, pad_len), value=0)
+        seq_len += pad_len
+    mask = mask.view(batch_size, seq_len // k, k)
+    return mask.max(dim=2).values  # shape: [B, T//k]
 
 
 def tokenize_text(text: str, tokenizer: LLMTokenizer):
@@ -106,7 +129,7 @@ def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extrac
     audio_data = [item.audio for item in batch]
     # raw_input_prompts = [item["input_prompt"] for item in batch]
     # output_labels = [item["output_label"] for item in batch]
-    raw_input_prompts = ["以下の音声データを日本語で音声認識してください。"] * len(audio_data)
+    raw_input_prompts = ["日本語で音声認識してください。"] * len(audio_data)
     output_labels = [item.transcription for item in batch]
 
     # Format input prompts with special tokens
@@ -192,8 +215,8 @@ class DataInterface(L.LightningDataModule):
     def setup(self, stage: str):
         raw_train_dataset = load_dataset("japanese-asr/ja_asr.jsut_basic5000", split="test")
         train_dataset = ItemDataset([Item.model_validate(item) for item in raw_train_dataset])
-        raw_eval_dataset = load_dataset("RecoseleInc/middle_hardness_call_center", split="train").rename_column("transcription_kanji", "transcription")
-        eval_dataset = ItemDataset([Item.model_validate(item) for item in raw_eval_dataset])
+        #raw_eval_dataset = load_dataset("RecoseleInc/middle_hardness_call_center", split="train").rename_column("transcription_kanji", "transcription")
+        eval_dataset = ItemDataset([Item.model_validate(item) for item in raw_train_dataset.select(range(5))])
         self.train_dataset, self.val_dataset = train_dataset, eval_dataset
 
     def collate_fn(self, batch: list[Item]):
@@ -223,8 +246,8 @@ class SpeechLLMModel(L.LightningModule):
     def __init__(
         self,
         checkpoint_path: str,
+        llm_path: str,
         speech_encoder_path: str = "openai/whisper-large-v3",
-        llm_path: str = "../pretrained_models/Qwen2.5-0.5B-Instruct",
         learning_rate: float = 1e-4,
         warmup_steps: int = 1000,
     ):
@@ -237,21 +260,29 @@ class SpeechLLMModel(L.LightningModule):
         assert isinstance(self.feature_extractor, WhisperFeatureExtractor)
         # Initialize LLM
         self.llm_tokenizer = AutoTokenizer.from_pretrained(llm_path)
-        self.llm_tokenizer.padding_side = "right"
+        self.llm_tokenizer.padding_side = "left"
         self.llm_tokenizer.pad_token = self.llm_tokenizer.eos_token
         self.llm_model = AutoModelForCausalLM.from_pretrained(llm_path, device_map="auto")
-        assert isinstance(self.llm_model, Qwen2ForCausalLM)
+        #assert isinstance(self.llm_model, Qwen2ForCausalLM)
         # Initialize Projector
         self.downsample_factor = 4
-        self.projector = Projector(self.speech_encoder.config.hidden_size, self.llm_model.config.hidden_size)
+        self.projector = Projector(
+            self.speech_encoder.config.hidden_size * self.downsample_factor,
+            self.llm_model.config.hidden_size,
+        )
+        self.soft_prompt_len = 20  
+        self.soft_prompt_embeddings = SoftPrompt(self.soft_prompt_len, self.llm_model.config.hidden_size)
+        
         if checkpoint_path:
             ckpt = torch.load(checkpoint_path, map_location="cpu")
             self.projector.load_state_dict({k.replace("projector.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("projector.")})
+            self.soft_prompt.load_state_dict({k.replace("soft_prompt.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("soft_prompt.")})
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.speech_encoder.to(device)
         self.projector.to(device)
         self.llm_model.to(device)
+        self.soft_prompt_embeddings.to(device)
 
         # Freeze models except projector
         for param in self.speech_encoder.parameters():
@@ -340,22 +371,24 @@ class SpeechLLMModel(L.LightningModule):
         # 3. 其他部分使用冻结模块的输出，但采用 .detach() 而不是 no_grad 包裹后续运算
         # 这样可以在不计算梯度的同时，仍让后续运算在正常的 autograd 环境下执行，从而保留 projector 输出的梯度流。
         input_embeds = get_token_embedding(batch["input_ids"], self.llm_model).detach()
+        batch_size = input_embeds.size(0)
+        soft_prompt_expanded = self.soft_prompt_embeddings(batch_size)
         assistant_embeds = get_token_embedding(batch["assistant_token_ids"], self.llm_model).detach()
         reply_embeds = get_token_embedding(batch["output_ids"], self.llm_model).detach()
         input_reply_embeds = reply_embeds[:, :-1, :]
 
         # 4. 拼接所有输入序列（注意此处不再处于 no_grad 环境）
-        prefix_embeds = torch.cat([input_embeds, projected_speech, assistant_embeds], dim=1)
+        prefix_embeds = torch.cat([input_embeds, soft_prompt_expanded, projected_speech, assistant_embeds], dim=1)
         combined_embeds = torch.cat([prefix_embeds, input_reply_embeds], dim=1)
 
         # 5. 处理 attention masks（同理，操作应在正常环境下进行）
-        audio_mask_downsampled = batch["audio_masks"][:, :: self.downsample_factor]
-        prefix_mask = torch.cat([batch["input_masks"], audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
+        soft_prompt_mask = torch.ones(batch_size, self.soft_prompt_len, device=self.device) 
+        audio_mask_downsampled = downsample_mask(batch["audio_masks"].to(self.device), k=self.downsample_factor)
+        prefix_mask = torch.cat([batch["input_masks"], soft_prompt_mask, audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
         reply_mask = batch["output_masks"][:, :-1]
         combined_mask = torch.cat([prefix_mask, reply_mask], dim=1)
 
         # 6. 设置标签：前缀部分设为 -100，只有回复部分计算 loss
-        batch_size, _, _ = combined_embeds.size()
         _, prefix_len, _ = prefix_embeds.size()
         labels = torch.full((batch_size, combined_embeds.size(1)), -100, dtype=torch.long, device=combined_embeds.device)
         labels[:, prefix_len:] = batch["output_ids"][:, 1:]
@@ -377,87 +410,74 @@ class SpeechLLMModel(L.LightningModule):
         return loss
 
     def validation_step(self, batch: Batch, batch_idx: int):
-        # 1. 处理语音输入（validation时也使用no_grad）
         with torch.no_grad():
+            # === 1. 语音编码 ===
             speech_features = self.speech_encoder(batch["audio_features"])
             speech_embeds = speech_features.last_hidden_state
             downsampled_embeds = downsample(speech_embeds, self.downsample_factor)
             projected_speech = self.projector(downsampled_embeds)
 
-            # 2. 获取嵌入并detach
+            # === 2. 获取文本部分的嵌入 ===
             input_embeds = get_token_embedding(batch["input_ids"], self.llm_model).detach()
             assistant_embeds = get_token_embedding(batch["assistant_token_ids"], self.llm_model).detach()
             reply_embeds = get_token_embedding(batch["output_ids"], self.llm_model).detach()
             input_reply_embeds = reply_embeds[:, :-1, :]
 
-            # 3. 拼接所有输入序列
-            prefix_embeds = torch.cat([input_embeds, projected_speech, assistant_embeds], dim=1)
+            # === 3. Soft Prompt + 拼接 ===
+            batch_size = input_embeds.size(0)
+            soft_prompt_expanded = self.soft_prompt_embeddings(batch_size)
+            prefix_embeds = torch.cat([input_embeds, soft_prompt_expanded, projected_speech, assistant_embeds], dim=1)
             combined_embeds = torch.cat([prefix_embeds, input_reply_embeds], dim=1)
 
-            # 4. 处理attention masks
-            audio_mask_downsampled = batch["audio_masks"][:, :: self.downsample_factor]
-            prefix_mask = torch.cat([batch["input_masks"], audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
+            # === 4. attention mask 拼接 ===
+            soft_prompt_mask = torch.ones(batch_size, self.soft_prompt_len, device=self.device)
+            audio_mask_downsampled = downsample_mask(batch["audio_masks"].to(self.device), k=self.downsample_factor)
+            prefix_mask = torch.cat([batch["input_masks"], soft_prompt_mask, audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
             reply_mask = batch["output_masks"][:, :-1]
             combined_mask = torch.cat([prefix_mask, reply_mask], dim=1)
 
-            # 5. 设置标签，与training_step保持一致
-            batch_size = combined_embeds.size(0)
+            # === 5. 标签设置 ===
             prefix_len = prefix_embeds.size(1)
-            labels = torch.full((batch_size, combined_embeds.size(1)), -100, dtype=torch.long, device=combined_embeds.device)
+            labels = torch.full((batch_size, combined_embeds.size(1)), -100, dtype=torch.long, device=self.device)
             labels[:, prefix_len:] = batch["output_ids"][:, 1:]
 
-            # 6. 计算验证损失
+            # === 6. 验证损失计算 ===
             val_outputs = self.llm_model(inputs_embeds=combined_embeds, attention_mask=combined_mask, labels=labels)
-
             val_loss = val_outputs.loss
             self.log("val_loss", val_loss, sync_dist=True, prog_bar=True)
 
-            # 7. 生成文本进行评估
+            # === 7. 推理输出 ===
             generated_ids = self.llm_model.generate(
-                inputs_embeds=prefix_embeds,  # 注意这里只用prefix部分
-                attention_mask=prefix_mask,  # 相应的mask也只用prefix部分
+                inputs_embeds=prefix_embeds,
+                attention_mask=prefix_mask,
                 max_new_tokens=500,
                 num_beams=4,
                 early_stopping=True,
                 pad_token_id=self.llm_tokenizer.pad_token_id,
                 eos_token_id=self.llm_tokenizer.eos_token_id,
                 no_repeat_ngram_size=3,
-                temperature=0.7,
-                top_p=0.9,
-                do_sample=True,
+                temperature=1.0,
+                do_sample=False,
             )
 
-            # 8. 解码生成的文本和参考文本
-            generated_text = self.llm_tokenizer.batch_decode(
-                generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True
-            )
+            # === 8. 解码生成 & 参考文本 ===
+            generated_text = self.llm_tokenizer.batch_decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+            reference_text = self.llm_tokenizer.batch_decode(batch["output_ids"], skip_special_tokens=True, clean_up_tokenization_spaces=True)
 
-            reference_text = self.llm_tokenizer.batch_decode(
-                batch["output_ids"], skip_special_tokens=True, clean_up_tokenization_spaces=True
-            )
-
-            # 9. 打印调试信息
             if batch_idx == 0:
                 print("\nValidation Shapes:")
                 print(f"prefix_embeds: {prefix_embeds.shape}")
-                print(f"input_reply_embeds: {input_reply_embeds.shape}")
                 print(f"combined_embeds: {combined_embeds.shape}")
                 print(f"labels: {labels.shape}")
-                print(f"Number of actual target tokens: {(labels != -100).sum().item()}")
-
-                print("\nValidation Examples:")
+                print(f"Actual target tokens: {(labels != -100).sum().item()}")
                 for i in range(min(2, len(generated_text))):
                     print(f"\nExample {i + 1}:")
                     print(f"Generated: \033[43m{generated_text[i]}\033[0m")
                     print(f"Reference: \033[44m{reference_text[i]}\033[0m")
-                    print("-" * 50)
-            # 10. 计算 CER（逐对计算后取平均）
-            cer_scores = [
-                cer(ref, hyp) for ref, hyp in zip(reference_text, generated_text)
-            ]
-            avg_cer = sum(cer_scores) / len(cer_scores)
 
-            # 11. 记录 CER
+            # === 9. 计算 CER ===
+            cer_scores = [cer(ref, hyp) for ref, hyp in zip(reference_text, generated_text)]
+            avg_cer = sum(cer_scores) / len(cer_scores)
             self.log("val_cer", avg_cer, prog_bar=True, sync_dist=True)
 
             return {"val_loss": val_loss, "val_cer": avg_cer, "generated_texts": generated_text, "reference_texts": reference_text}
@@ -473,7 +493,10 @@ class SpeechLLMModel(L.LightningModule):
         checkpoint['state_dict'] = filtered_state_dict
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.projector.parameters(), lr=self.hparams.learning_rate)
+        optimizer = torch.optim.AdamW(
+                        list(self.projector.parameters()) + list(self.soft_prompt_embeddings.parameters()),
+                        lr=self.hparams.learning_rate
+                    )
 
         def lr_lambda(current_step):
             warmup_steps = self.hparams.warmup_steps
@@ -491,8 +514,6 @@ class SpeechLLMModel(L.LightningModule):
         }
 
         return [optimizer], [scheduler]
-
-
 
 
 class MyLightningCLI(LightningCLI):

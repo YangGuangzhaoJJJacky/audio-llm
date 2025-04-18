@@ -1,7 +1,7 @@
 python train/projector.py fit \
     --model.speech_encoder_path "openai/whisper-large-v3" \
-    --model.checkpoint_path "lightning_logs/version_9/checkpoints/epoch=2-step=1875.ckpt" \
-    --model.llm_path "pretrained_models/Qwen2.5-0.5B-Instruct" \
+    --model.checkpoint_path ""  \
+    --model.llm_path "TinyLlama/TinyLlama-1.1B-Chat-v0.4" \
     --data.batch_size=2 \
     --data.num_workers=8 \
     --trainer.accelerator "auto" \
@@ -12,7 +12,7 @@ python train/projector.py fit \
     --trainer.log_every_n_steps 10 \
     --trainer.val_check_interval=2500 \
     --trainer.callbacks+=ModelCheckpoint \
-    --trainer.callbacks.monitor="val_cer" \
+    --trainer.callbacks.monitor="train_loss" \
     --trainer.callbacks.save_top_k=5 \
     --trainer.callbacks.mode="min" \
     --trainer.callbacks.auto_insert_metric_name=True \
