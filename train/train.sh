@@ -1,7 +1,7 @@
 python train/projector.py fit \
     --model.speech_encoder_path "openai/whisper-large-v3" \
     --model.checkpoint_path ""  \
-    --model.llm_path "TinyLlama/TinyLlama-1.1B-Chat-v0.4" \
+    --model.llm_path "/media/disk2/End2End/pretrained_models/Qwen2.5-0.5B-Instruct" \
     --data.batch_size=2 \
     --data.num_workers=8 \
     --trainer.accelerator "auto" \

@@ -276,7 +276,7 @@ class SpeechLLMModel(L.LightningModule):
         if checkpoint_path:
             ckpt = torch.load(checkpoint_path, map_location="cpu")
             self.projector.load_state_dict({k.replace("projector.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("projector.")})
-            self.soft_prompt.load_state_dict({k.replace("soft_prompt.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("soft_prompt.")})
+            self.soft_prompt_embeddings.load_state_dict({k.replace("soft_prompt.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("soft_prompt.")})
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.speech_encoder.to(device)
