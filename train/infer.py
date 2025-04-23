@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, WhisperModel, WhisperFeatureExtractor
-from train.projector import Projector, process_audio, downsample, get_token_embedding  
+from train.projector import Projector, process_audio, downsample, get_token_embedding, SoftPrompt
 import numpy as np
 import librosa
 
@@ -13,21 +13,28 @@ def infer(
     projector_path: str,
     prompt: str = "以下の音声データを日本語で音声認識してください。",
     assistant_token_text: str = "<|im_end|>\n<|im_start|>assistant\n",
-    max_new_tokens: int = 256
+    max_new_tokens: int = 256,
+    downsamplefactor: int = 4
 ):
     # Load models
     print("Loading models...")
     speech_encoder = WhisperModel.from_pretrained(speech_encoder_path).encoder.eval()
     feature_extractor = WhisperFeatureExtractor.from_pretrained(speech_encoder_path)
-    llm_tokenizer = AutoTokenizer.from_pretrained(llm_path, padding_side="right")
+    llm_tokenizer = AutoTokenizer.from_pretrained(llm_path, padding_side="left")
     llm_tokenizer.pad_token = llm_tokenizer.eos_token
     llm_model = AutoModelForCausalLM.from_pretrained(llm_path, device_map="auto").eval()
-    projector = Projector(speech_encoder.config.hidden_size, llm_model.config.hidden_size).eval()
-    soft_prompt = SoftPrompt(length=20, dim=llm_model.config.hidden_size).eval()
+    projector = Projector(speech_encoder_hidden_size=speech_encoder.config.hidden_size * downsamplefactor, llm_hidden_size=llm_model.config.hidden_size).eval()
+    soft_prompt = SoftPrompt(prompt_len=20, hidden_size=llm_model.config.hidden_size).eval()
 
     ckpt = torch.load(projector_path, map_location="cpu")
+    print("\n".join(ckpt["state_dict"].keys()))
     projector.load_state_dict({k.replace("projector.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("projector.")})
-    soft_prompt.load_state_dict({k.replace("soft_prompt.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("soft_prompt.")})
+    soft_prompt.load_state_dict({
+        k.replace("soft_prompt_embeddings.", ""): v
+        for k, v in ckpt["state_dict"].items()
+        if k.startswith("soft_prompt_embeddings.")
+    })
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     speech_encoder.to(device)
     projector.to(device)
@@ -71,8 +78,8 @@ def infer(
     # Create attention mask
     prefix_mask = torch.cat([
         torch.ones(1, prompt_embeds.size(1), dtype=torch.long, device=device),
-        torch.ones(1, soft_prompt.length, dtype=torch.long, device=device),
-        audio_mask[:, ::4],
+        torch.ones(1, 20, dtype=torch.long, device=device),
+        audio_mask[:, ::downsamplefactor],
         torch.ones(1, assistant_embeds.size(1), dtype=torch.long, device=device)
     ], dim=1)
 
@@ -110,6 +117,6 @@ if __name__ == "__main__":
     infer(
         audio_path=audio_path,
         speech_encoder_path="openai/whisper-large-v3",
-        llm_path="pretrained_models/Qwen2.5-0.5B-Instruct",
-        projector_path="/media/disk2/End2End/tb_logs/projector/version_3/checkpoints/epoch=28-step=18125.ckpt"
+        llm_path="TinyLlama/TinyLlama-1.1B-Chat-v0.4",
+        projector_path="/media/disk2/End2End/tb_logs/projector/version_19/checkpoints/epoch=36-step=23125.ckpt"
     )
