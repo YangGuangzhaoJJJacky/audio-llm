@@ -124,16 +124,17 @@ def process_audio(audio_data: np.ndarray, orig_sr: int, target_sr: int = 16000) 
     return audio_data
 
 
-def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extractor: WhisperFeatureExtractor) -> Batch:
+def data_collator(batch: list[dict], llm_tokenizer: LLMTokenizer, feature_extractor: WhisperFeatureExtractor) -> Batch:
     # Extract batch components
-    audio_data = [item.audio for item in batch]
+    audio_data = [item["audio"] for item in batch]
     # raw_input_prompts = [item["input_prompt"] for item in batch]
     # output_labels = [item["output_label"] for item in batch]
-    raw_input_prompts = ["日本語で音声認識してください。"] * len(audio_data)
-    output_labels = [item.transcription for item in batch]
+    raw_input_prompts = ["音声をテキストに書き起こす。"] * len(audio_data)
+    output_labels = [item["transcription"] for item in batch] 
 
     # Format input prompts with special tokens
     formatted_prompts = []
+    '''
     for prompt in raw_input_prompts:
         formatted_prompt = (
             "<|im_start|>system\n"
@@ -142,15 +143,20 @@ def data_collator(batch: list[Item], llm_tokenizer: LLMTokenizer, feature_extrac
             "<|im_start|>user\n"
         )
         formatted_prompts.append(formatted_prompt)
-
+    '''
+    for prompt in raw_input_prompts:
+        formatted_prompt = (f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>{prompt.strip()}\n\n")
+        formatted_prompts.append(formatted_prompt)
     # Process audio features
-    processed_audio = [process_audio(audio.array, audio.sampling_rate) for audio in audio_data]
+    processed_audio = [process_audio(audio["array"], audio["sampling_rate"]) for audio in audio_data]
     audio_features = feature_extractor(
         processed_audio, sampling_rate=16000, return_tensors="pt", padding="max_length", return_attention_mask=True
     )
 
     # Add assistant token after audio
-    assistant_token = ["<|im_end|>\n<|im_start|>assistant\n"] * len(audio_data)
+    #assistant_token = ["<|im_end|>\n<|im_start|>assistant\n"] * len(audio_data)
+    assistant_token = ["<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"] * len(audio_data)
+
 
     # Tokenize input prompts
     input_tokens = llm_tokenizer(
@@ -213,11 +219,16 @@ class DataInterface(L.LightningDataModule):
 
     @override
     def setup(self, stage: str):
-        raw_train_dataset = load_dataset("japanese-asr/ja_asr.jsut_basic5000", split="test")
-        train_dataset = ItemDataset([Item.model_validate(item) for item in raw_train_dataset])
-        #raw_eval_dataset = load_dataset("RecoseleInc/middle_hardness_call_center", split="train").rename_column("transcription_kanji", "transcription")
-        eval_dataset = ItemDataset([Item.model_validate(item) for item in raw_train_dataset.select(range(5))])
-        self.train_dataset, self.val_dataset = train_dataset, eval_dataset
+        raw_train_dataset = load_dataset(
+            "japanese-asr/ja_asr.reazon_speech_all",
+            "subset_1",
+            split="train",
+            cache_dir="/workspace"  # <-- 自定义缓存目录
+        0)
+        #train_dataset = ItemDataset([Item.model_validate(item) for item in raw_train_dataset])
+        raw_eval_dataset = load_dataset("japanese-asr/ja_asr.jsut_basic5000", split="test").select(range(100))
+        #eval_dataset = ItemDataset([Item.model_validate(item) for item in raw_eval_dataset.select(range(5))])
+        self.train_dataset, self.val_dataset = raw_train_dataset, raw_eval_dataset
 
     def collate_fn(self, batch: list[Item]):
         return data_collator(batch, self.llm_tokenizer, self.feature_extractor)
@@ -248,8 +259,8 @@ class SpeechLLMModel(L.LightningModule):
         checkpoint_path: str,
         llm_path: str,
         speech_encoder_path: str = "openai/whisper-large-v3",
-        learning_rate: float = 1e-4,
-        warmup_steps: int = 1000,
+        learning_rate: float = 1e-5,
+        warmup_steps: int = 50,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -275,8 +286,10 @@ class SpeechLLMModel(L.LightningModule):
         
         if checkpoint_path:
             ckpt = torch.load(checkpoint_path, map_location="cpu")
+            for k in ckpt["state_dict"]:
+                print(k)
             self.projector.load_state_dict({k.replace("projector.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("projector.")})
-            self.soft_prompt_embeddings.load_state_dict({k.replace("soft_prompt.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("soft_prompt.")})
+            self.soft_prompt_embeddings.load_state_dict({k.replace("soft_prompt_embeddings.", ""): v for k, v in ckpt["state_dict"].items() if k.startswith("soft_prompt_embeddings.")})
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.speech_encoder.to(device)
@@ -290,21 +303,21 @@ class SpeechLLMModel(L.LightningModule):
         for param in self.llm_model.parameters():
             param.requires_grad = False
 
-    def forward(self, batch: Batch):
-        # Process speech input
-        speech_features = cast(BaseModelOutput, self.speech_encoder(batch["audio_features"]))
-        speech_embeds = speech_features.last_hidden_state
-        speech_embeds = downsample(speech_embeds, self.downsample_factor)
-        projected_speech = self.projector(speech_embeds)
+    # def forward(self, batch: Batch):
+    #     # Process speech input
+    #     speech_features = cast(BaseModelOutput, self.speech_encoder(batch["audio_features"]))
+    #     speech_embeds = speech_features.last_hidden_state
+    #     speech_embeds = downsample(speech_embeds, self.downsample_factor)
+    #     projected_speech = self.projector(speech_embeds)
 
-        # Get input text embeddings
-        input_embeds = get_token_embedding(batch["input_ids"], self.llm_model)
+    #     # Get input text embeddings
+    #     input_embeds = get_token_embedding(batch["input_ids"], self.llm_model)
 
-        # Combine embeddings
-        combined_embeds = torch.cat([input_embeds, projected_speech], dim=1)
-        combined_mask = torch.cat([batch["input_masks"], batch["audio_masks"][:, :: self.downsample_factor]], dim=1)
+    #     # Combine embeddings
+    #     combined_embeds = torch.cat([input_embeds, projected_speech], dim=1)
+    #     combined_mask = torch.cat([batch["input_masks"], batch["audio_masks"][:, :: self.downsample_factor]], dim=1)
 
-        return combined_embeds, combined_mask
+    #     return combined_embeds, combined_mask
 
     def training_step_with_llm(self, batch: Batch, batch_idx: int):
         # 处理语音输入
@@ -383,8 +396,9 @@ class SpeechLLMModel(L.LightningModule):
 
         # 5. 处理 attention masks（同理，操作应在正常环境下进行）
         soft_prompt_mask = torch.ones(batch_size, self.soft_prompt_len, device=self.device) 
-        audio_mask_downsampled = downsample_mask(batch["audio_masks"].to(self.device), k=self.downsample_factor)
-        prefix_mask = torch.cat([batch["input_masks"], soft_prompt_mask, audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
+        audio_masks=torch.ones_like(downsampled_embeds[:, :, 0])
+        #audio_mask_downsampled = downsample_mask(batch["audio_masks"].to(self.device), k=self.downsample_factor)
+        prefix_mask = torch.cat([batch["input_masks"], soft_prompt_mask, audio_masks, batch["assistant_token_mask"]], dim=1)
         reply_mask = batch["output_masks"][:, :-1]
         combined_mask = torch.cat([prefix_mask, reply_mask], dim=1)
 
@@ -431,8 +445,9 @@ class SpeechLLMModel(L.LightningModule):
 
             # === 4. attention mask 拼接 ===
             soft_prompt_mask = torch.ones(batch_size, self.soft_prompt_len, device=self.device)
-            audio_mask_downsampled = downsample_mask(batch["audio_masks"].to(self.device), k=self.downsample_factor)
-            prefix_mask = torch.cat([batch["input_masks"], soft_prompt_mask, audio_mask_downsampled, batch["assistant_token_mask"]], dim=1)
+            audio_masks=torch.ones_like(downsampled_embeds[:, :, 0])
+            #audio_mask_downsampled = downsample_mask(batch["audio_masks"].to(self.device), k=self.downsample_factor)
+            prefix_mask = torch.cat([batch["input_masks"], soft_prompt_mask, audio_masks, batch["assistant_token_mask"]], dim=1)
             reply_mask = batch["output_masks"][:, :-1]
             combined_mask = torch.cat([prefix_mask, reply_mask], dim=1)
 
@@ -500,11 +515,15 @@ class SpeechLLMModel(L.LightningModule):
 
         def lr_lambda(current_step):
             warmup_steps = self.hparams.warmup_steps
-            total_steps = self.trainer.estimated_stepping_batches or 10000
+            #total_steps = self.trainer.estimated_stepping_batches or 10000
+            total_steps = 100000
             if current_step < warmup_steps:
                 return float(current_step) / float(max(1, warmup_steps))
             progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-            return 0.5 * (1.0 + np.cos(np.pi * progress))
+            min_lr_ratio = 0.05
+            cosine_decay = 0.5 * (1.0 + np.cos(np.pi * progress))
+            return min_lr_ratio + (1.0 - min_lr_ratio) * cosine_decay
+
 
         scheduler = {
             "scheduler": LambdaLR(optimizer, lr_lambda),
