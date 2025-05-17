@@ -113,7 +113,7 @@ def data_collator(batch, llm_tokenizer, feature_extractor):
     outputs = [item["transcription"] for item in batch]
 
     #sys_prompts = ["<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n音声をテキストに書き起こす。"] * len(batch)
-    sys_prompts = ["<|im_start|>system\\n"] * len(batch)
+    sys_prompts = ["<|im_start|>system\n"] * len(batch)
 
     texts_cleaned = [clean_text(text) for text in outputs]
 
@@ -191,7 +191,7 @@ class SLAM_ASR(l.LightningModule):
         self.speech_encoder = WhisperModel.from_pretrained(
             speech_encoder_path).encoder
         
-        llm_path = "Qwen/Qwen2.5-7B-Instruct"
+        llm_path = "Qwen/Qwen3-4B"
         
         self.llm_tokenizer = AutoTokenizer.from_pretrained(llm_path)
         self.llm_tokenizer.pad_token = self.llm_tokenizer.eos_token
@@ -220,14 +220,16 @@ class SLAM_ASR(l.LightningModule):
         # self.assistant_prompt_embeds, self.assistant_mask = get_text_embedding(
         #     "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n", self.llm_model, self.llm_tokenizer, return_attention_mask=True)
         self.assistant_prompt_embeds, self.assistant_mask = get_text_embedding(
-            "<|im_end|><|im_start|>user\n音声認識ください<|im_end|><|im_start|>assistant\n", self.llm_model, self.llm_tokenizer, return_attention_mask=True)
+            "<|im_end|>\n<|im_start|>user\n音声認識ください<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n", self.llm_model, self.llm_tokenizer, return_attention_mask=True)
 
     def setup(self, stage=None):
         raw_train_dataset = load_dataset(
             "japanese-asr/ja_asr.reazon_speech_all",
             "subset_1",
             split="train",
-            cache_dir="/workspace"  
+            #cache_dir="/workspace"  ,
+            streaming=True
+
         )
         self.train_dataset = raw_train_dataset
         self.val_dataset = load_dataset("japanese-asr/ja_asr.jsut_basic5000", split="test").select(range(100))
@@ -240,7 +242,7 @@ class SLAM_ASR(l.LightningModule):
                 batch, self.llm_tokenizer, self.feature_extractor),
             num_workers=20,
             pin_memory=True,
-            shuffle=True,
+            shuffle=False,
             persistent_workers=True,
             drop_last=True,
         )
@@ -263,7 +265,8 @@ class SLAM_ASR(l.LightningModule):
 
         # Exclude keys that start with 'speech_encoder' or 'llm_model'
         filtered_state_dict = {k: v for k, v in state_dict.items(
-        ) if not k.startswith(('speech_encoder', 'llm_model'))}
+        #) if not k.startswith(('speech_encoder', 'llm_model'))}
+        ) if not k.startswith(('llm_model'))}
 
         # Update the checkpoint with the filtered state_dict
         checkpoint['state_dict'] = filtered_state_dict
@@ -318,6 +321,18 @@ class SLAM_ASR(l.LightningModule):
             labels_mask
         ], dim=1)
 
+        inputs_embeds_without_label = torch.cat([
+            user_prompt_embeds,
+            projected_embeds,
+            assistant_prompt_embeds,
+        ], dim=1)
+
+        attention_masks_without_label = torch.cat([
+            user_mask,
+            speech_mask,
+            assistant_mask,
+        ], dim=1)
+
         labels = torch.full(
             (batch_size, inputs_embeds.shape[1]), fill_value=-100, device=labels_ids.device)
 
@@ -335,8 +350,8 @@ class SLAM_ASR(l.LightningModule):
             attention_mask = attention_masks[0].unsqueeze(0)
 
             output = self.llm_model.generate(
-                inputs_embeds=input_embed,
-                attention_mask=attention_mask,
+                inputs_embeds=inputs_embeds_without_label,
+                attention_mask=attention_masks_without_label,
                 max_new_tokens=actual_label_length + 10,
                 pad_token_id=self.llm_tokenizer.pad_token_id,
                 num_beams=2,
@@ -383,12 +398,22 @@ class SLAM_ASR(l.LightningModule):
                 assistant_prompt_embeds,
                 labels_embed
             ], dim=1)
+            inputs_embeds_without_label = torch.cat([
+                user_prompt_embeds,
+                projected_embeds,
+                assistant_prompt_embeds,
+            ], dim=1)
 
             attention_masks = torch.cat([
                 user_mask,
                 speech_mask,
                 assistant_mask,
                 labels_mask
+            ], dim=1)
+            attention_masks_without_label = torch.cat([
+                user_mask,
+                speech_mask,
+                assistant_mask,
             ], dim=1)
 
             labels = torch.full(
@@ -399,8 +424,8 @@ class SLAM_ASR(l.LightningModule):
             actual_label_length = (labels_mask == 1).sum(dim=1).max().detach()
 
             outputs = self.llm_model.generate(
-                inputs_embeds=inputs_embeds,
-                attention_mask=attention_masks,
+                inputs_embeds=inputs_embeds_without_label ,
+                attention_mask=attention_masks_without_label ,
                 max_new_tokens=actual_label_length + 10,
                 pad_token_id=self.llm_tokenizer.pad_token_id,
                 num_beams=2,
