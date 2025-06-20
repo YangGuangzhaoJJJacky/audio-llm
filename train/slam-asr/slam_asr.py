@@ -183,7 +183,7 @@ def data_collator(batch, llm_tokenizer, feature_extractor):
     }
 
 class SLAM_ASR(l.LightningModule):
-    def __init__(self, batch_size: int = 1, warmup_steps: int = 1000, lr: float = 1e-4):
+    def __init__(self, batch_size: int = 1, warmup_steps: int = 1000, lr: float = 1e-5):
         super().__init__()
         self.save_hyperparameters()
 
@@ -191,7 +191,7 @@ class SLAM_ASR(l.LightningModule):
         self.speech_encoder = WhisperModel.from_pretrained(
             speech_encoder_path).encoder
         
-        llm_path = "Qwen/Qwen3-4B"
+        llm_path = "/mnt/data-raid/yangguangzhao/Qwen3-0.6B"
         
         self.llm_tokenizer = AutoTokenizer.from_pretrained(llm_path)
         self.llm_tokenizer.pad_token = self.llm_tokenizer.eos_token
@@ -204,7 +204,7 @@ class SLAM_ASR(l.LightningModule):
             self.speech_encoder.config.hidden_size * self.downsample_factor,
             self.llm_model.config.hidden_size,
         )
-        checkpoint_path =None
+        checkpoint_path = "/mnt/data-raid/yangguangzhao/End2End/train/slam-asr/tb_logs/projector/version_5/checkpoints/epoch=2-step=46541.ckpt"
         if checkpoint_path:
             ckpt = torch.load(checkpoint_path, map_location="cpu")
             for k in ckpt["state_dict"]:
@@ -225,7 +225,7 @@ class SLAM_ASR(l.LightningModule):
     def setup(self, stage=None):
         raw_train_dataset = load_dataset(
             "japanese-asr/ja_asr.reazon_speech_all",
-            "subset_1",
+            "subset_4",
             split="train",
             #cache_dir="/workspace"  ,
             streaming=True
@@ -265,8 +265,8 @@ class SLAM_ASR(l.LightningModule):
 
         # Exclude keys that start with 'speech_encoder' or 'llm_model'
         filtered_state_dict = {k: v for k, v in state_dict.items(
-        #) if not k.startswith(('speech_encoder', 'llm_model'))}
-        ) if not k.startswith(('llm_model'))}
+        ) if not k.startswith(('speech_encoder', 'llm_model'))}
+        #) if not k.startswith(('llm_model'))}
 
         # Update the checkpoint with the filtered state_dict
         checkpoint['state_dict'] = filtered_state_dict

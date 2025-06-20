@@ -22,7 +22,7 @@ class Projector(nn.Module):
 class SLAM_ASR(torch.nn.Module):
     """ Speech to text module based on Whisper and LLM models. """
 
-    def __init__(self, pretrained_model_name="openai/whisper-large-v3", llm_model_name="meta-llama/Meta-Llama-3-8B-Instruct"):
+    def __init__(self, pretrained_model_name="openai/whisper-large-v3", llm_model_name="/mnt/data-raid/yangguangzhao/Qwen3-0.6B"):
         super().__init__()
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(
             pretrained_model_name)
@@ -48,8 +48,9 @@ class SLAM_ASR(torch.nn.Module):
 
     def init_prompts(self):
         """ Initialize embeddings for static prompts used with the LLM. """
-        user_prompt_text = "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n"
-        assistant_prompt_text = ". Transcribe speech to text.<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+        user_prompt_text = "<|im_start|>system\n"
+        assistant_prompt_text = "<|im_end|>\n<|im_start|>user\n音声認識したあと。音声の中の男性の名前はなんですか？答えてください<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        #assistant_prompt_text = "<|im_end|>\n<|im_start|>user\n音声認識ください。そして音声の中の男性の名前はなんですか？答えてください<|im_end|>\n<|im_start|>assistant\n"
 
         self.user_prompt_embeds, self.user_mask = self.get_text_embedding(
             user_prompt_text, return_attention_mask=True)
@@ -77,7 +78,7 @@ class SLAM_ASR(torch.nn.Module):
                 max_new_tokens=200,  # Adjust as needed
                 pad_token_id=model.llm_tokenizer.pad_token_id,
                 num_beams=5,
-                 early_stopping=True,
+                early_stopping=True,
             )
 
         return outputs
@@ -168,8 +169,8 @@ def transcribe_audio(model, audio_path, device='cuda'):
 # Main execution block
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    checkpoint_path = '/home/x/x/epoch=1-step=30432.ckpt'
-    audio_path = '/home/x/x/x.wav'
+    checkpoint_path = '/mnt/data-raid/yangguangzhao/End2End/train/slam-asr/tb_logs/projector/version_7/checkpoints/epoch=0-step=18125.ckpt'
+    audio_path = '/mnt/data-raid/yangguangzhao/End2End/test.wav'
 
     # Load model and tokenizer
     model = load_model(checkpoint_path)

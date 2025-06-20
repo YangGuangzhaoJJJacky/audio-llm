@@ -12,3 +12,4 @@ __pycache__/
 pretrained_models/*
 tb_logs/*
 *.log
+train/slam-asr/tb_logs/
